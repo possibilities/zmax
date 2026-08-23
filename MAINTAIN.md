@@ -43,18 +43,28 @@ never shadows or depends on a zmx a human may have installed.
   (`Hello`/`Welcome`, the restore boundary, `create`, discovery, records, the
   `-Dcompanion` build) is never offered; it is the fork's reason to exist. An
   offer is a `fix/<name>` or `feat/<name>` branch cut from current
-  `origin/main`, written fresh rather than lifted from the stack, pushed to the
-  fork when its pull request opens, and tended by `watch-requests`; one offer
-  open at a time unless the maintainer asks for more. Candidates, both
-  verified against upstream builds:
-  - `fix/first-attach-restore` — a first attach in a release build loses the
-    child's opening output, because `daemonize()` returns on a sleep rather
-    than an acknowledged exec (reproduced 3/3 on upstream `ea45749`
-    ReleaseFast). Upstream shape: restore on first attach when the shadow
-    terminal has output, without the fork's negotiation.
-  - `fix/attach-exit-status` — `zmx attach <cmd>` discards the child's exit
-    status because the daemon never reaps; capture it and have the client
-    exit with it (128+signal for a signal).
+  `origin/main`, written fresh rather than lifted from the stack, adversarially
+  reviewed by subagents before it is pushed, pushed to the fork when its pull
+  request opens, and tended by `watch-requests`. Independent planks may be
+  open together; a plank that builds on another waits for it. Every message
+  to upstream is approved by the human except code answering a review when
+  the change is clear, and the recap once those commits are pushed. The
+  planks, each verified against upstream `ea45749` built ReleaseFast:
+  - `fix/first-attach-output` — output a command prints before its creator's
+    first attach connects is lost (the creator connects ~10 ms after forking;
+    a release build's child prints inside that): replay the terminal on a
+    first attach too, whenever it already holds output. Stack commit
+    `14e6b2e`/`4e29345` carry the fork's fuller answer.
+  - `fix/attach-exit-status` — `zmx attach <name> <cmd>` exits 0 whatever
+    cmd did, because the daemon's only `waitpid` is a blind one at teardown:
+    reap at pty EOF, report the status to clients as `TaskComplete`, hold a
+    daemon whose child ended before anyone connected for up to 2 s, flush
+    before closing, exit attach with the status. Stack commits `4e29345`,
+    `23e5519`, `e81ef16` carry the fork's version.
+  - `fix/daemon-dev-tty` (not yet cut) — the daemon's `getTerminalSize` opens
+    `/dev/tty` after `setsid()`, which fails with ENXIO and prints an
+    "unexpected errno: 6" trace in Debug builds on every session start; map
+    it to no device. The fork's `14e6b2e` does this.
 - "Landed" means the behavior is on `neurosnap/zmx:main`, decided by reading
   that code and exercising its path — never by the request's state, since the
   maintainer lands work by rewriting it and closing. When an offer has landed,

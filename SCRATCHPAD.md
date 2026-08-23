@@ -42,9 +42,11 @@ Stack commits, bottom to top, against the inventory in `MAINTAIN.md`:
 
 ## Offers
 
-- None open. Two candidates are specified in `MAINTAIN.md` (§Upstream); neither
-  branch has been cut. Our last word on #127 is the newest comment there, with
-  no maintainer response as of 2026-08-22.
+- `fix/first-attach-output` and `fix/attach-exit-status` are built on local
+  branches from `origin/main` `ea45749` (2026-08-23), under adversarial
+  review, not yet pushed or opened; PR numbers go here when they open.
+  `fix/daemon-dev-tty` is specified, not cut. Our last word on #127 is the
+  newest comment there, with no maintainer response as of 2026-08-22.
 
 ## Current notes
 
