@@ -45,13 +45,29 @@ Stack commits, bottom to top, against the inventory in `MAINTAIN.md`:
 
 ## Offers
 
-- `fix/first-attach-output` and `fix/attach-exit-status` are built on local
-  branches from `origin/main` `ea45749` (2026-08-23), under adversarial
-  review, not yet pushed or opened; PR numbers go here when they open.
-  `fix/daemon-dev-tty` is specified, not cut. Our last word on #127 is the
-  newest comment there, with no maintainer response as of 2026-08-22.
+- No pull request is open. Two defects were written fresh against
+  `ea45749`, adversarially reviewed (two Opus reviewers each, high effort;
+  the exit-status one was rewritten on their findings), and filed as issues
+  with proof-of-concept commits on the fork's `poc/*` tags rather than
+  offered, since the pinned Companion is not affected and nothing of ours
+  waits on upstream: [#246](https://github.com/neurosnap/zmx/issues/246)
+  (`poc/first-attach-output` → `a68c809`) and
+  [#247](https://github.com/neurosnap/zmx/issues/247)
+  (`poc/attach-exit-status` → `53407fe`). Local branches `fix/*` of the same
+  commits exist in `~/src/zmx` and are not published. `fix/daemon-dev-tty`
+  is specified, not cut. Our last word on #127 is the newest comment there,
+  with no maintainer response as of 2026-08-22.
 
 ## Current notes
+
+- **For the next cycle:** the stack reaps the child at pty EOF (`23e5519`)
+  and the teardown still sends SIGHUP/SIGKILL to the process group `-pid`
+  (`handleKill`), so a pid reused within the ~1.5 s between them could be
+  signalled. Deliberate in the fork (backgrounded children must not outlive
+  the session), negligible in practice, but `waitid(P_PID, pid, WEXITED |
+  WNOHANG | WNOWAIT)` reads the status without reaping — the zombie keeps
+  pid and pgid pinned until the teardown's own `waitpid` — and removes the
+  window. Found by the #247 review; `poc/attach-exit-status` shows the call.
 
 - Fork branches were reconciled on 2026-08-23: local, origin, and fork `main`
   all name `ea45749`; `integration` is `652a151`; the three `push-*` heads

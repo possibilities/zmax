@@ -48,19 +48,28 @@ never shadows or depends on a zmx a human may have installed.
   request opens, and tended by `watch-requests`. Independent planks may be
   open together; a plank that builds on another waits for it. Every message
   to upstream is approved by the human except code answering a review when
-  the change is clear, and the recap once those commits are pushed. The
+  the change is clear, and the recap once those commits are pushed. A
+  defect we have already fixed in the stack and do not depend on upstream
+  for is reported as an **issue** with a proof-of-concept commit, not a pull
+  request: the commit lives on the fork under a `poc/<name>` tag — tags are
+  outside the branch model, so reconciliation never moves them — and the
+  issue says we would turn it into a PR if the maintainer wants one. The
   planks, each verified against upstream `ea45749` built ReleaseFast:
-  - `fix/first-attach-output` — output a command prints before its creator's
+  - `poc/first-attach-output` — output a command prints before its creator's
     first attach connects is lost (the creator connects ~10 ms after forking;
     a release build's child prints inside that): replay the terminal on a
-    first attach too, whenever it already holds output. Stack commit
-    `14e6b2e`/`4e29345` carry the fork's fuller answer.
-  - `fix/attach-exit-status` — `zmx attach <name> <cmd>` exits 0 whatever
+    first attach too, whenever it already holds output. Filed as
+    [neurosnap/zmx#246](https://github.com/neurosnap/zmx/issues/246). Stack
+    commits `14e6b2e`/`4e29345` carry the fork's fuller answer; the pinned
+    Companion is not affected.
+  - `poc/attach-exit-status` — `zmx attach <name> <cmd>` exits 0 whatever
     cmd did, because the daemon's only `waitpid` is a blind one at teardown:
-    reap at pty EOF, report the status to clients as `TaskComplete`, hold a
-    daemon whose child ended before anyone connected for up to 2 s, flush
-    before closing, exit attach with the status. Stack commits `4e29345`,
-    `23e5519`, `e81ef16` carry the fork's version.
+    read the status with `waitid(WNOWAIT)` at pty EOF, send it as its own
+    `Exit` message, hold a daemon whose child ended before anyone connected,
+    flush before closing, exit attach with the status. Filed as
+    [neurosnap/zmx#247](https://github.com/neurosnap/zmx/issues/247). Stack
+    commits `4e29345`, `23e5519`, `e81ef16`, `bbb26d4` carry the fork's
+    version; fmx reads exit records, never `attach`.
   - `fix/daemon-dev-tty` (not yet cut) — the daemon's `getTerminalSize` opens
     `/dev/tty` after `setsid()`, which fails with ENXIO and prints an
     "unexpected errno: 6" trace in Debug builds on every session start; map
