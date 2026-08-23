@@ -30,7 +30,9 @@ The checkout being maintained is `~/src/zmx`, with `fork` pointing to
 `possibilities/zmx` and `origin` pointing to `neurosnap/zmx`. Its
 `integration` branch is the only ref fmx's pin may name. zmx has no agent
 guidance of its own; fmx's `AGENTS.md` and `CONTEXT.md` carry the Companion's
-contract and language, and the handoff that built the fork is the history.
+contract and language, and `docs/fork-notes.md` keeps what building the fork
+taught about zmx's internals and wire — read it before a rebase touches
+`loop.zig`, `daemonize.zig`, or `ipc.zig`.
 
 ## Working topology
 
