@@ -1,0 +1,126 @@
+#!/bin/bash
+
+set -euo pipefail
+
+root=$(cd "$(dirname "$0")/.." && pwd)
+
+fail() {
+    printf 'pin-transaction: %s\n' "$*" >&2
+    exit 1
+}
+
+test_root=$(mktemp -d "${TMPDIR:-/tmp}/zmax-pin-test.XXXXXX")
+cleanup() {
+    local status=$?
+    trap - EXIT
+    rm -rf -- "$test_root"
+    exit "$status"
+}
+trap cleanup EXIT
+
+# A fork: upstream main, an integration stack above it, published to a bare fork.
+zmx="$test_root/zmx"
+zmx_fork="$test_root/zmx-fork.git"
+git init --quiet --initial-branch=main "$zmx"
+git -C "$zmx" config user.name zmax-test
+git -C "$zmx" config user.email zmax@example.invalid
+printf '.{\n    .name = .zmx,\n    .version = "0.7.0",\n}\n' >"$zmx/build.zig.zon"
+git -C "$zmx" add build.zig.zon
+git -C "$zmx" commit --quiet -m upstream
+git -C "$zmx" switch --quiet -c integration
+printf 'companion\n' >"$zmx/companion"
+git -C "$zmx" add companion
+git -C "$zmx" commit --quiet -m "feat: companion"
+integration_sha=$(git -C "$zmx" rev-parse HEAD)
+git init --quiet --bare "$zmx_fork"
+git -C "$zmx" remote add fork "$zmx_fork"
+git -C "$zmx" push --quiet fork main integration
+
+# fmx: a pin at upstream's commit, on main, with a bare origin.
+fmx="$test_root/fmx"
+fmx_origin="$test_root/fmx-origin.git"
+git init --quiet --initial-branch=main "$fmx"
+git -C "$fmx" config user.name zmax-test
+git -C "$fmx" config user.email zmax@example.invalid
+old_sha=$(git -C "$zmx" rev-parse main)
+printf '{\n  "repository": "https://github.com/possibilities/zmx.git",\n  "branch": "integration",\n  "commit": "%s",\n  "build": "0.7.0+fmx.%s"\n}\n' \
+    "$old_sha" "${old_sha:0:12}" >"$fmx/companion.json"
+git -C "$fmx" add companion.json
+git -C "$fmx" commit --quiet -m pin
+git init --quiet --bare "$fmx_origin"
+git -C "$fmx" remote add origin "$fmx_origin"
+git -C "$fmx" push --quiet origin main
+git -C "$fmx" branch --set-upstream-to=origin/main main >/dev/null
+
+fake_bin="$test_root/bin"
+mkdir "$fake_bin"
+ln -s "$root/tests/fixtures/fake-zig.sh" "$fake_bin/zig"
+
+run_pin() {
+    PATH="$fake_bin:$PATH" \
+    ZMAX_ZMX_CHECKOUT="$zmx" \
+    ZMAX_FMX_CHECKOUT="$fmx" \
+    ZMAX_PIN_SKIP_TESTS=1 \
+    "$root/scripts/pin-companion.sh" "$@"
+}
+
+expected_build="0.7.0+fmx.${integration_sha:0:12}"
+
+# --check plans and writes nothing.
+check_output=$(run_pin --check)
+printf '%s\n' "$check_output" | grep -F "PIN  $old_sha -> $integration_sha" >/dev/null \
+    || fail "--check did not plan the pin move"
+printf '%s\n' "$check_output" | grep -F "BUILD 0.7.0+fmx.${old_sha:0:12} -> $expected_build" >/dev/null \
+    || fail "--check did not plan the build string"
+[ -z "$(git -C "$fmx" status --porcelain)" ] || fail "--check changed fmx"
+
+# Unpublished integration is refused before anything is built.
+printf 'more\n' >>"$zmx/companion"
+git -C "$zmx" commit --quiet -am "feat: more"
+set +e
+unpublished_output=$(run_pin --apply 2>&1)
+unpublished_status=$?
+set -e
+[ "$unpublished_status" -ne 0 ] || fail "pinned an unpublished integration"
+printf '%s\n' "$unpublished_output" | grep -F 'is not the published fork/integration' >/dev/null \
+    || fail "did not explain the unpublished integration"
+git -C "$zmx" reset --quiet --hard "$integration_sha"
+
+# A Companion that misreports its build is refused, and the pin file is untouched.
+set +e
+misreport_output=$(FAKE_ZIG_REPORT=0.7.0 run_pin --apply 2>&1)
+misreport_status=$?
+set -e
+[ "$misreport_status" -ne 0 ] || fail "accepted a Companion reporting the wrong build"
+printf '%s\n' "$misreport_output" | grep -F "reports '0.7.0', not $expected_build" >/dev/null \
+    || fail "did not explain the misreported build"
+grep -F "\"commit\": \"$old_sha\"" "$fmx/companion.json" >/dev/null \
+    || fail "a refused pin changed companion.json"
+[ -z "$(git -C "$fmx" status --porcelain)" ] || fail "a refused pin left fmx dirty"
+[ "$(git -C "$zmx" worktree list | wc -l | tr -d ' ')" = 1 ] \
+    || fail "a refused pin left a build worktree"
+
+# A failed build leaves everything as it was.
+set +e
+FAKE_ZIG_FAIL=1 run_pin --apply >/dev/null 2>&1 && fail "accepted a failed build"
+set -e
+[ -z "$(git -C "$fmx" status --porcelain)" ] || fail "a failed build left fmx dirty"
+
+# The real thing: pin written, committed on main, pushed.
+run_pin --apply >/dev/null
+grep -F "\"commit\": \"$integration_sha\"" "$fmx/companion.json" >/dev/null \
+    || fail "the pin was not moved"
+grep -F "\"build\": \"$expected_build\"" "$fmx/companion.json" >/dev/null \
+    || fail "the build string was not written"
+[ -z "$(git -C "$fmx" status --porcelain)" ] || fail "the pin was not committed"
+[ "$(git --git-dir="$fmx_origin" rev-parse main)" = "$(git -C "$fmx" rev-parse main)" ] \
+    || fail "the pin was not pushed"
+git -C "$fmx" log -1 --format=%s | grep -F "Pin the Companion to zmx ${integration_sha:0:12}" >/dev/null \
+    || fail "the pin commit is not named"
+[ "$(git -C "$zmx" worktree list | wc -l | tr -d ' ')" = 1 ] \
+    || fail "the build worktree was not removed"
+
+# Running again is a no-op.
+run_pin --apply | grep -F 'Already pinned.' >/dev/null || fail "a second apply was not a no-op"
+
+printf 'pin transaction validation passed.\n'

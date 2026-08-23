@@ -1,0 +1,15 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Validate repository contracts
+        run: tests/validate.sh
+      - name: Check shell scripts
+        run: shellcheck scripts/reconcile-branches.sh scripts/pin-companion.sh tests/validate.sh tests/pin-transaction.sh tests/fixtures/fake-zig.sh
