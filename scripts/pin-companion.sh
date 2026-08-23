@@ -158,3 +158,11 @@ git -C "$fmx_checkout" push --quiet "$fmx_remote" "$fmx_branch" \
     || die "the pin is committed locally but could not be pushed; push $fmx_checkout $fmx_branch by hand"
 
 printf 'Pinned fmx to Companion %s (%s); fmx %s pushed.\n' "$build" "${commit:0:12}" "$fmx_branch"
+
+# The machine's editable fmx finds fmx-zmx on PATH; fmx's own script keeps
+# that one at the pin. A failure here is reported, not fatal: the pin is
+# already real, and the script can be rerun by hand.
+if [ "$skip_tests" -ne 1 ] && [ -x "$fmx_checkout/scripts/install-companion.sh" ]; then
+    "$fmx_checkout/scripts/install-companion.sh" \
+        || printf 'zmax pin: the local Companion was not refreshed; rerun %s/scripts/install-companion.sh\n' "$fmx_checkout" >&2
+fi

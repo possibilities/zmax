@@ -199,8 +199,10 @@ must equal `fork/integration`), derives the build string from the fork's
 `build.zig.zon`, pulls fmx `main` (another session commits there), builds the
 Companion ReleaseFast from a detached worktree at that commit, writes
 `~/code/fmx/companion.json`, runs fmx's suite and e2e against the build,
-commits the pin on fmx `main`, and pushes — or reverts the file and reports
-which gate failed. It says when the fork's `build.zig.zon` changed since the
+commits the pin on fmx `main`, pushes, and then refreshes this machine's
+editable fmx's Companion (`~/.local/bin/fmx-zmx`, through fmx's
+`scripts/install-companion.sh`) — or reverts the file and reports which gate
+failed. It says when the fork's `build.zig.zon` changed since the
 previous pin, because fmx's `THIRD_PARTY_NOTICES.md` Companion section is kept
 by hand against it. Cutting an fmx release is a separate, deliberate act.
 
