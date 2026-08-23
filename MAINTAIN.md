@@ -26,9 +26,6 @@ never shadows or depends on a zmx a human may have installed.
   and `CONTEXT.md`) name the Companion's contract and the language —
   **Companion**, **Home**, **Companion pin**, **Restore** — and are read before
   touching the fork.
-- Rerere is not relied on. The stack is small and rebases are meant to be
-  read: a recorded resolution would hide exactly the protocol drift a cycle
-  exists to notice.
 - Contribution conventions: low volume, strongly single-maintainer,
   scope-conscious. No `CONTRIBUTING.md`, issue-first rule, pull-request
   template, hosted CI, CLA, or DCO; CI is the maintainer's own pico.sh run on
@@ -86,6 +83,9 @@ never shadows or depends on a zmx a human may have installed.
 - Open pull-request heads: preserved. The exact head of a currently open
   request from the fork keeps its name only while the request is open, which
   is why an offer is pushed when its request opens and not before.
+- Rerere: not relied on. The stack is small and rebases are meant to be
+  read: a recorded resolution would hide exactly the protocol drift a cycle
+  exists to notice.
 - `scripts/reconcile-branches.sh` is this repository's entrypoint to the
   shared namespace script; it declares these values and nothing else. The
   fork has no hosted CI, so quarantine creates trigger nothing.
