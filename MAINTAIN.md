@@ -179,6 +179,12 @@ scratchpad records which. Absence is work.
 - Keep changes mechanically close to upstream where that is cheap: later
   rebases and offers both depend on it. No ghostty-free daemon path, no
   embedder loop, no in-process Zig consumer — fmx talks over the socket.
+- The protocol version in `src/ipc.zig` does not move on its own: fmx's
+  `src/zmx-protocol.ts` mirrors its constants and golden bytes, and a bump
+  strands every agent a previous Companion is still holding. fmx's
+  `AGENTS.md` says what must exist first (a drain or a carry for
+  survivors); a stack change that needs a new version waits for that, and
+  the two move together in one pin.
 
 ## Gate
 

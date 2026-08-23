@@ -60,6 +60,15 @@ Stack commits, bottom to top, against the inventory in `MAINTAIN.md`:
 
 ## Current notes
 
+- `integration` is `d951390`, one test-only commit above the pin
+  (`2c79c4d`): `create.bats`'s early-ending-history case now stops the
+  daemon before asking, so it cannot lose the race to a release build. The
+  pin need not move for it. A full `bats test/` once stalled at
+  `run: requires a command argument` and then ran 93/93; a `zmx run`
+  with no command still forks its daemon before refusing, and the daemon
+  closes only fds below 64, so a long bats run may hand it a higher pipe
+  fd that keeps `run` waiting — unproven, worth a look if it recurs.
+
 - **For the next cycle:** the stack reaps the child at pty EOF (`23e5519`)
   and the teardown still sends SIGHUP/SIGKILL to the process group `-pid`
   (`handleKill`), so a pid reused within the ~1.5 s between them could be
