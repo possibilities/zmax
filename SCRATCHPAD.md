@@ -9,11 +9,14 @@ entries on every maintenance cycle and appends one compact history entry.
   (2026-08-22/23) before this workshop existed; this is the seeded state.
 - Upstream base: `ea45749` (`neurosnap/zmx:main`, "fix(docs): handle session
   prefixes in picker (#239)").
-- Published integration: `652a151698ded52246c578f63e1c69d57d6e3b32`, 21
-  commits above the base.
-- Companion pin in fmx: commit `652a151698de`, build `0.7.0+fmx.652a151698de`
-  (fmx `main` `0de23fa`). No fmx release carries the pair yet; `latest.txt`
-  still serves a lone-`fmx` 0.1.1 archive.
+- Published integration: `2c79c4dd2f3b7caaf1f555f49bba5353b4e34858`, 22
+  commits above the base (`2c79c4d` fixed the Linux build: libc's
+  `struct stat` is opaque under musl through @cImport; statx/fstatat now).
+- Companion pin in fmx: commit `2c79c4dd2f3b`, build `0.7.0+fmx.2c79c4dd2f3b`,
+  moved by `scripts/pin-companion.sh` on 2026-08-23 (fmx 363 pass, e2e 5/5
+  against it). fmx 0.2.0 — the first release of the pair — is building on
+  the GitHub runners; `latest.txt` still serves a lone-`fmx` 0.1.1 archive
+  until it publishes.
 - Gate as last run (end of tranche 6): `zig build test` green; bats 92/93
   with the timing-sensitive `create.bats` history case; fmx 361 pass and e2e
   5/5 against the ReleaseFast Companion build.
@@ -38,7 +41,7 @@ Stack commits, bottom to top, against the inventory in `MAINTAIN.md`:
   their review rounds `702f9e3`, `c483f60`.
 - Scrollback: `d06399d`, `54e7229`.
 - Created child environment and swept-socket record: `1c933f1`.
-- Companion build: `d378b52`, `652a151`.
+- Companion build: `d378b52`, `652a151`, `2c79c4d`.
 
 ## Offers
 
@@ -62,4 +65,6 @@ Stack commits, bottom to top, against the inventory in `MAINTAIN.md`:
 
 - 2026-08-23: Seeded the workshop from the end of tranche 6 and reconciled
   the fork's branch namespace for the first time. No maintenance cycle has
-  run.
+  run. Later that day: the first Linux Companion build (fmx's 0.2.0 release
+  run) exposed the @cImport stat; fixed on `integration` and the pin moved
+  through `pin-companion.sh` — its first real use.
