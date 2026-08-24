@@ -112,7 +112,9 @@ never shadows or depends on a zmx a human may have installed.
 ## Features
 
 Every feature is a commit or a few adjacent commits in the stack; the
-scratchpad records which. Absence is work.
+scratchpad records which. Absence is work. Work that adds a feature writes its
+entry in the same change; an unrecorded feature is unfinished work, because a
+later cycle reconciles only what this section names.
 
 ### Portable wire
 
