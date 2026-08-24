@@ -64,6 +64,14 @@ run_pin() {
     "$root/scripts/pin-companion.sh" "$@"
 }
 
+run_pin_with_tests() {
+    PATH="$fake_bin:$PATH" \
+    ZMAX_ZMX_CHECKOUT="$zmx" \
+    ZMAX_FMX_CHECKOUT="$fmx" \
+    ZMAX_PIN_SKIP_TESTS=0 \
+    "$root/scripts/pin-companion.sh" "$@"
+}
+
 expected_build="0.7.0+fmx.${integration_sha:0:12}"
 
 # --check plans and writes nothing.
@@ -105,6 +113,23 @@ set +e
 FAKE_ZIG_FAIL=1 run_pin --apply >/dev/null 2>&1 && fail "accepted a failed build"
 set -e
 [ -z "$(git -C "$fmx" status --porcelain)" ] || fail "a failed build left fmx dirty"
+
+# A failed fmx gate restores companion.json byte for byte, including its final
+# newline. Command substitution used to lose it and leave the clean checkout
+# dirty after the otherwise-correct rollback.
+ln -s "$(command -v false)" "$fake_bin/bun"
+pin_before_failure=$(git -C "$fmx" hash-object companion.json)
+set +e
+gate_failure_output=$(run_pin_with_tests --apply 2>&1)
+gate_failure_status=$?
+set -e
+[ "$gate_failure_status" -ne 0 ] || fail "accepted a failed fmx gate"
+printf '%s\n' "$gate_failure_output" | grep -F 'fmx typecheck failed against the new pin' >/dev/null \
+    || fail "did not explain the failed fmx gate"
+[ "$(git -C "$fmx" hash-object companion.json)" = "$pin_before_failure" ] \
+    || fail "a failed fmx gate did not restore companion.json byte for byte"
+[ -z "$(git -C "$fmx" status --porcelain)" ] || fail "a failed fmx gate left fmx dirty"
+rm "$fake_bin/bun"
 
 # The real thing: pin written, committed on main, pushed.
 run_pin --apply >/dev/null

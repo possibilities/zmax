@@ -134,9 +134,10 @@ reported=$(ZMX_DIR="$work_dir/zmx-dir" "$companion" version 2>/dev/null | awk 'N
 [ "$reported" = "$build" ] || die "the Companion reports '$reported', not $build"
 
 # Write the pin, then prove fmx against the build it names; revert on failure.
-previous_pin=$(cat "$pin_file")
+previous_pin="$work_dir/companion.json.before"
+cp "$pin_file" "$previous_pin"
 restore_pin() {
-    printf '%s' "$previous_pin" >"$pin_file"
+    cp "$previous_pin" "$pin_file"
 }
 printf '{\n  "repository": "%s",\n  "branch": "%s",\n  "commit": "%s",\n  "build": "%s"\n}\n' \
     "$repository" "$integration_branch" "$commit" "$build" >"$pin_file"
