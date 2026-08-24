@@ -131,11 +131,12 @@ scratchpad records which. Absence is work.
 
 ### Multi-client terminal ownership
 
-- Every attached terminal remembers its dimensions. A completed attach,
-  user-input frame, or resize makes that client the sizing owner; its stored
-  dimensions reach both the PTY and shadow terminal before user input does.
-  When the owner disconnects, the most recently active attached terminal takes
-  over immediately.
+- Every attached terminal remembers its dimensions. A completed attach, focus
+  gain, keyboard input, mouse motion or buttons, paste, or resize makes that
+  client the sizing owner; its stored dimensions reach both the PTY and shadow
+  terminal before interactive bytes do. Focus loss and terminal replies do
+  not claim ownership. When the owner disconnects, the most recently active
+  attached terminal takes over immediately.
 - `create --exit-on-last-client` is opt-in session lifecycle. It arms only
   after the first valid terminal Init, then ends the child when the last
   terminal disconnects; discovery, probes, and other one-shot clients neither

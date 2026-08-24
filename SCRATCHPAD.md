@@ -9,17 +9,18 @@ entries on every maintenance cycle and appends one compact history entry.
   (2026-08-22/23) before this workshop existed; this is the seeded state.
 - Upstream base: `ea45749` (`neurosnap/zmx:main`, "fix(docs): handle session
   prefixes in picker (#239)").
-- Published integration: `0081b6ea97954429cc627eb8c68a23c2177bc535`, 24
+- Published integration: `bea6677b7762f915078a359d8a48c02664d8dc74`, 25
   commits above the base. `d951390` fixes the early-ending history test race;
   `0081b6e` adds per-terminal sizing ownership and opt-in final-client
-  lifecycle without changing protocol version 1.
-- Companion pin in fmx: commit `0081b6ea9795`, build `0.7.0+fmx.0081b6ea9795`,
-  moved by `scripts/pin-companion.sh` on 2026-08-23 (fmx 346 pass, e2e 12/12
+  lifecycle, and `bea6677` makes mouse activity and focus gain take sizing
+  ownership, all without changing protocol version 1.
+- Companion pin in fmx: commit `bea6677b7762`, build `0.7.0+fmx.bea6677b7762`,
+  moved by `scripts/pin-companion.sh` on 2026-08-23 (fmx 361 pass, e2e 12/12
   against it). fmx 0.2.0 is the first released pair; this later pin is on
   main and is not itself a release.
 - Gate as last run: formatting, Debug build, Zig tests, and bats 93/93 green;
   the published commit built Companion ReleaseFast; clean fmx main passed
-  typecheck, all 346 tests, and all 12 Companion-backed PTY tests against it.
+  typecheck, all 361 tests, and all 12 Companion-backed PTY tests against it.
 
 ## Carried state
 
@@ -32,7 +33,7 @@ Stack commits, bottom to top, against the inventory in `MAINTAIN.md`:
   (a refused client acts on nothing), `78f16f9` (oversized frame, late Hello,
   silent handshake).
 - Multi-client terminal ownership and opt-in final-client lifecycle:
-  `0081b6e`.
+  `0081b6e`, with mouse-motion and focus-gain ownership in `bea6677`.
 - Restore and exit: `4e29345` (explicit restore boundary, exact exit),
   `23e5519` (never block the daemon on an uncertain reap), `e81ef16` (wind a
   session down once), `14e6b2e` (daemonize returns on an acknowledged exec —
@@ -62,11 +63,12 @@ Stack commits, bottom to top, against the inventory in `MAINTAIN.md`:
 
 ## Current notes
 
-- `integration` and the fmx Companion pin are `0081b6e`. The Companion now
-  remembers dimensions and interaction order per terminal, fails sizing
-  ownership over immediately when an owner disconnects, and offers the Runtime
-  an opt-in final-terminal lifetime. `create.bats`'s early-ending-history fix remains
-  at `d951390`. A full `bats test/` once stalled at
+- `integration` and the fmx Companion pin are `bea6677`. The Companion now
+  remembers dimensions and interaction order per terminal, gives ownership to
+  mouse motion and focus gain, fails it over immediately when an owner
+  disconnects, and offers the Runtime an opt-in final-terminal lifetime.
+  `create.bats`'s early-ending-history fix remains at `d951390`. A full
+  `bats test/` once stalled at
   `run: requires a command argument` and then ran 93/93; a `zmx run`
   with no command still forks its daemon before refusing, and the daemon
   closes only fds below 64, so a long bats run may hand it a higher pipe
@@ -100,3 +102,7 @@ Stack commits, bottom to top, against the inventory in `MAINTAIN.md`:
   lifecycle as `0081b6e`, gated the 24-commit stack, published `integration`,
   and transactionally moved fmx to build `0.7.0+fmx.0081b6ea9795` (346 tests,
   12/12 PTY).
+- 2026-08-23: Made passive mouse motion and focus gain take sizing ownership
+  as `bea6677`, gated and published the 25-commit stack, moved fmx to
+  `0.7.0+fmx.bea6677b7762` (361 tests, 12/12 PTY), and made a failed pin gate
+  restore `companion.json` byte for byte.

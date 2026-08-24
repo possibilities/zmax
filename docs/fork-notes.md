@@ -26,6 +26,12 @@ Things that cost time to discover and are not obvious from the code.
   terminal's last Resize beside its client record, apply it to the PTY and
   shadow terminal before queueing that client's first user-input bytes, and
   order activity so an owner disconnect can restore the latest survivor.
+- **Mouse motion is sizing interaction.** OpenTUI enables all-motion mouse
+  tracking, so a passive move arrives as SGR mouse input and should claim the
+  Client just like a key. Recognize the raw `CSI < ... M/m` form before the VT
+  parser loses its private marker; basic mouse input dispatches as `CSI M`.
+  Focus gain claims too, focus loss does not — but focus loss must keep parsing
+  because a key may follow it in the same payload.
 - **A socket client is not necessarily a terminal.** Discovery and other
   one-shot requests connect to a session too. Final-client lifecycle therefore
   arms only on a valid Init and counts only clients that actually attached a
