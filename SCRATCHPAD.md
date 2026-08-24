@@ -9,17 +9,17 @@ entries on every maintenance cycle and appends one compact history entry.
   (2026-08-22/23) before this workshop existed; this is the seeded state.
 - Upstream base: `ea45749` (`neurosnap/zmx:main`, "fix(docs): handle session
   prefixes in picker (#239)").
-- Published integration: `2c79c4dd2f3b7caaf1f555f49bba5353b4e34858`, 22
-  commits above the base (`2c79c4d` fixed the Linux build: libc's
-  `struct stat` is opaque under musl through @cImport; statx/fstatat now).
-- Companion pin in fmx: commit `2c79c4dd2f3b`, build `0.7.0+fmx.2c79c4dd2f3b`,
-  moved by `scripts/pin-companion.sh` on 2026-08-23 (fmx 363 pass, e2e 5/5
-  against it). fmx 0.2.0 — the first release of the pair — is building on
-  the GitHub runners; `latest.txt` still serves a lone-`fmx` 0.1.1 archive
-  until it publishes.
-- Gate as last run (end of tranche 6): `zig build test` green; bats 92/93
-  with the timing-sensitive `create.bats` history case; fmx 361 pass and e2e
-  5/5 against the ReleaseFast Companion build.
+- Published integration: `0081b6ea97954429cc627eb8c68a23c2177bc535`, 24
+  commits above the base. `d951390` fixes the early-ending history test race;
+  `0081b6e` adds per-terminal sizing ownership and opt-in final-client
+  lifecycle without changing protocol version 1.
+- Companion pin in fmx: commit `0081b6ea9795`, build `0.7.0+fmx.0081b6ea9795`,
+  moved by `scripts/pin-companion.sh` on 2026-08-23 (fmx 346 pass, e2e 12/12
+  against it). fmx 0.2.0 is the first released pair; this later pin is on
+  main and is not itself a release.
+- Gate as last run: formatting, Debug build, Zig tests, and bats 93/93 green;
+  the published commit built Companion ReleaseFast; clean fmx main passed
+  typecheck, all 346 tests, and all 12 Companion-backed PTY tests against it.
 
 ## Carried state
 
@@ -31,6 +31,8 @@ Stack commits, bottom to top, against the inventory in `MAINTAIN.md`:
 - Negotiated clients: `cc7c6ed` (Hello/Welcome and client phase), `7709119`
   (a refused client acts on nothing), `78f16f9` (oversized frame, late Hello,
   silent handshake).
+- Multi-client terminal ownership and opt-in final-client lifecycle:
+  `0081b6e`.
 - Restore and exit: `4e29345` (explicit restore boundary, exact exit),
   `23e5519` (never block the daemon on an uncertain reap), `e81ef16` (wind a
   session down once), `14e6b2e` (daemonize returns on an acknowledged exec —
@@ -60,10 +62,11 @@ Stack commits, bottom to top, against the inventory in `MAINTAIN.md`:
 
 ## Current notes
 
-- `integration` is `d951390`, one test-only commit above the pin
-  (`2c79c4d`): `create.bats`'s early-ending-history case now stops the
-  daemon before asking, so it cannot lose the race to a release build. The
-  pin need not move for it. A full `bats test/` once stalled at
+- `integration` and the fmx Companion pin are `0081b6e`. The Companion now
+  remembers dimensions and interaction order per terminal, fails sizing
+  ownership over immediately when an owner disconnects, and offers the Runtime
+  an opt-in final-terminal lifetime. `create.bats`'s early-ending-history fix remains
+  at `d951390`. A full `bats test/` once stalled at
   `run: requires a command argument` and then ran 93/93; a `zmx run`
   with no command still forks its daemon before refusing, and the daemon
   closes only fds below 64, so a long bats run may hand it a higher pipe
@@ -93,3 +96,7 @@ Stack commits, bottom to top, against the inventory in `MAINTAIN.md`:
   run. Later that day: the first Linux Companion build (fmx's 0.2.0 release
   run) exposed the @cImport stat; fixed on `integration` and the pin moved
   through `pin-companion.sh` — its first real use.
+- 2026-08-23: Added multi-client terminal sizing and opt-in final-client
+  lifecycle as `0081b6e`, gated the 24-commit stack, published `integration`,
+  and transactionally moved fmx to build `0.7.0+fmx.0081b6ea9795` (346 tests,
+  12/12 PTY).

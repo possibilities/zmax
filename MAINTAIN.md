@@ -129,6 +129,18 @@ scratchpad records which. Absence is work.
   client's bytes act on nothing. An oversized frame, a late `Hello`, and a
   silent handshake are survived.
 
+### Multi-client terminal ownership
+
+- Every attached terminal remembers its dimensions. A completed attach,
+  user-input frame, or resize makes that client the sizing owner; its stored
+  dimensions reach both the PTY and shadow terminal before user input does.
+  When the owner disconnects, the most recently active attached terminal takes
+  over immediately.
+- `create --exit-on-last-client` is opt-in session lifecycle. It arms only
+  after the first valid terminal Init, then ends the child when the last
+  terminal disconnects; discovery, probes, and other one-shot clients neither
+  arm the policy nor keep the opted-in session alive.
+
 ### Restore and exit
 
 - Every attach begins with `RestoreBegin`, the whole terminal as it stands,

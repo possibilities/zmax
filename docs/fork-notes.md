@@ -21,6 +21,16 @@ Things that cost time to discover and are not obvious from the code.
 - **Never block the daemon on `waitpid`.** It is single-threaded and holds the
   session socket; a wait that does not return wedges the session and every
   client. Use `WNOHANG` and retry.
+- **Sizing ownership needs per-client memory.** Asking a newly active client
+  for its size is too late for the input that made it active. Keep each
+  terminal's last Resize beside its client record, apply it to the PTY and
+  shadow terminal before queueing that client's first user-input bytes, and
+  order activity so an owner disconnect can restore the latest survivor.
+- **A socket client is not necessarily a terminal.** Discovery and other
+  one-shot requests connect to a session too. Final-client lifecycle therefore
+  arms only on a valid Init and counts only clients that actually attached a
+  terminal; otherwise a create probe can kill a session before its first
+  terminal arrives or keep it alive after the last terminal leaves.
 - **EOF does not prove the child is dead**, only that every slave fd closed.
   In practice it is very hard to separate the two: the session leader keeps the
   controlling terminal, so a child closing its stdio does *not* produce EOF.
@@ -105,4 +115,3 @@ does, so nothing upstream had to change with it.
   queue in `src/zmx-client.ts` handles that and waits for `drain`.
 - `Bun.connect`'s `open` handler must not return a value (its type is `void`).
 - fmx's tsconfig `include` did not cover `scripts/`; it does now.
-
