@@ -83,12 +83,11 @@ Stack commits, bottom to top, against the inventory in `MAINTAIN.md`:
   pid and pgid pinned until the teardown's own `waitpid` — and removes the
   window. Found by the #247 review; `poc/attach-exit-status` shows the call.
 
-- Fork branches were reconciled on 2026-08-23 under an incorrect automatic
-  deletion heuristic. The three upstream `push-*` copies were moved under
-  `DELETEME/push-*`; the approved repair will restore their original names
-  after the corrected policy is installed. Future deletion markers require
-  explicit human direction. Local `main` pulls from
-  `origin/main` and pushes to `fork/main`.
+- Fork branch repair completed on 2026-08-25: `main` and `integration` remain
+  unchanged, the three upstream `push-*` copies are restored at their original
+  names and SHAs, and no `DELETEME/*` ref remains. Future deletion markers
+  require explicit human direction. Local `main` pulls from `origin/main` and
+  pushes to `fork/main`.
 - `~/src/zmx` has a gitignored `zig-pkg/` from early tranches; a fresh
   worktree builds from the global Zig cache without it.
 
@@ -99,6 +98,9 @@ Stack commits, bottom to top, against the inventory in `MAINTAIN.md`:
   run. Later that day: the first Linux Companion build (fmx's 0.2.0 release
   run) exposed the @cImport stat; fixed on `integration` and the pin moved
   through `pin-companion.sh` — its first real use.
+- 2026-08-25: Removed automatic branch deletion inference and atomically
+  restored the three fork-local upstream `push-*` copies from their accidental
+  `DELETEME/*` names without changing their tips.
 - 2026-08-23: Added multi-client terminal sizing and opt-in final-client
   lifecycle as `0081b6e`, gated the 24-commit stack, published `integration`,
   and transactionally moved fmx to build `0.7.0+fmx.0081b6ea9795` (346 tests,
