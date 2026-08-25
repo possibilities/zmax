@@ -83,11 +83,12 @@ Stack commits, bottom to top, against the inventory in `MAINTAIN.md`:
   pid and pgid pinned until the teardown's own `waitpid` — and removes the
   window. Found by the #247 review; `poc/attach-exit-status` shows the call.
 
-- Fork branches were reconciled on 2026-08-23: local, origin, and fork `main`
-  all name `ea45749`; `integration` is `652a151`; the three `push-*` heads
-  mirrored from upstream's pico.sh CI when the fork was made are preserved
-  under `DELETEME/push-*`. No branch remains pending quarantine. Local `main`
-  pulls from `origin/main` and pushes to `fork/main`.
+- Fork branches were reconciled on 2026-08-23 under an incorrect automatic
+  deletion heuristic. The three upstream `push-*` copies were moved under
+  `DELETEME/push-*`; the approved repair will restore their original names
+  after the corrected policy is installed. Future deletion markers require
+  explicit human direction. Local `main` pulls from
+  `origin/main` and pushes to `fork/main`.
 - `~/src/zmx` has a gitignored `zig-pkg/` from early tranches; a fresh
   worktree builds from the global Zig cache without it.
 

@@ -5,8 +5,9 @@ set -euo pipefail
 # zmax's entrypoint to the maintain skill's shared namespace script. It
 # declares what MAINTAIN.md's Branch model says — the checkout, the remotes,
 # the branch names, the linear-stack model — and nothing else; the mechanics
-# (a read-only check from a disposable snapshot, one atomic exact-leased
-# push, quarantine that never deletes) are the skill's and are tested there.
+# (a read-only check from a disposable snapshot and one atomic exact-leased
+# push of declared refs that leaves all other heads unchanged) are the skill's
+# and are tested there.
 
 skill_dir="${MAINTAIN_SKILL_DIR:-$HOME/.local/share/agentstart/core-marketplace/plugins/agentstart-core/skills/maintain}"
 script="$skill_dir/scripts/reconcile-branches.sh"

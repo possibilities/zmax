@@ -22,9 +22,9 @@ the Companion fmx bundles as `fmx-zmx`. Read `CONTEXT.md`, `MAINTAIN.md`, and
   an unbounded transcript.
 - `scripts/reconcile-branches.sh` is the thin entrypoint to the skill's shared
   namespace script: it declares the branch model `MAINTAIN.md` states — a
-  linear stack, no carry heads, open-request heads preserved, `DELETEME/`
-  quarantine — and nothing else. The mechanics live and are tested in
-  agentguidance.
+  linear stack, no carry heads, open-request heads validated, and explicit
+  `DELETEME/` markers — and nothing else. Reconciliation leaves all undeclared
+  refs unchanged; the mechanics live and are tested in agentguidance.
 - `scripts/pin-companion.sh` is the consumer step: it moves fmx's Companion
   pin (`~/code/fmx/companion.json`) to the published `integration` commit
   after building that commit and running fmx's suite against it. It never
@@ -52,6 +52,10 @@ cycle's rebase, never a branch of its own. An offer to upstream is written
 fresh on `fix/<name>` from current `origin/main`, shaped as upstream would
 write it, and is not a stack commit moved across — the stack and the offer
 serve different audiences.
+
+Maintenance owns only Main and Integration. Creating, moving, or removing a
+`DELETEME/<original>` ref requires an explicit human decision naming that
+branch; age, ownership, request state, and namespace are never deletion intent.
 
 ## Validation
 

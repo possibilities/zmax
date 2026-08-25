@@ -93,21 +93,20 @@ never shadows or depends on a zmx a human may have installed.
   below refers to. There are no carry branches. A feature is repaired by
   editing its commit in place during the rebase; a new feature is a new commit
   at the top of the stack; a landed one is dropped.
-- Quarantine prefix: `DELETEME/`. Any fork head other than `main`,
-  `integration`, or a preserved open-request head — including an offer
-  branch whose request has closed, and the `push-*` heads mirrored from
-  upstream's CI when the fork was made — is moved at the same commit to
-  `DELETEME/<original-name>`. Existing `DELETEME/*` heads are permanent:
-  reported, never removed automatically.
-- Open pull-request heads: preserved. The exact head of a currently open
-  request from the fork keeps its name only while the request is open, which
-  is why an offer is pushed when its request opens and not before.
+- Deletion marker prefix: `DELETEME/`. Creating, moving, or removing
+  `DELETEME/<original-name>` requires an explicit human decision naming that
+  branch. Maintenance never infers deletion from branch age, ownership,
+  request state, namespace, or absence from the stack. Every undeclared fork
+  head remains unchanged.
+- Open pull-request heads: validated. Reconciliation confirms the exact head
+  of each currently open request from the fork but does not acquire ownership
+  of the ref. Closing a request does not authorize renaming or deleting its
+  branch, which is why an offer is pushed when its request opens and not before.
 - Rerere: not relied on. The stack is small and rebases are meant to be
   read: a recorded resolution would hide exactly the protocol drift a cycle
   exists to notice.
 - `scripts/reconcile-branches.sh` is this repository's entrypoint to the
-  shared namespace script; it declares these values and nothing else. The
-  fork has no hosted CI, so quarantine creates trigger nothing.
+  shared branch script; it declares these values and nothing else.
 
 ## Features
 

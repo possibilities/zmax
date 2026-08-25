@@ -40,12 +40,11 @@ Companion built from it reports. The consumer binding of this workshop; moved
 only by `scripts/pin-companion.sh`.
 _Avoid_: lock file, dependency version.
 
-**Quarantine branch** — A preserved fork branch renamed to
-`DELETEME/<original-name>` because it is neither `main`, `integration`, nor
-the head of an open pull request — including upstream's `push-*` CI heads
-mirrored when the fork was made, and an offer whose request has closed.
-Maintenance never deletes quarantine branches.
-_Avoid_: deleted branch, archive tag.
+**DELETEME branch** — An explicit human marker at
+`DELETEME/<original-name>` recording a decision to remove that named fork
+branch. Maintenance never creates it from branch age, ownership, request
+state, or namespace, and leaves every other undeclared ref untouched.
+_Avoid_: quarantine branch, stale branch, automatic archive.
 
 **Maintenance cycle** — One `/maintain` run that reviews upstream movement and
 the offers' fate, rebases the stack onto current upstream, gates the
