@@ -3,7 +3,7 @@
 This is current state for `/maintain`. The skill updates or removes stale
 entries on every maintenance cycle and appends one compact history entry.
 
-## Baseline
+## Delivered baseline
 
 - Last completed maintenance: 2026-08-29.
 - Upstream base: `fb1b6b66476fc83c1453b0cde8fe2a50166eb395`
@@ -20,14 +20,33 @@ entries on every maintenance cycle and appends one compact history entry.
   passed. Clean fmx main passed typecheck, 342 tests with one expected skip,
   and the Companion-backed PTY test 1/1 against that exact build.
 
+## Audited-upstream frontier
+
+- Frontier: `fb1b6b66476fc83c1453b0cde8fe2a50166eb395`, completed
+  2026-08-29.
+- The prior frontier was reconstructed as
+  `ea45749278bac648ab13a4280a6035012854d717`, completed 2026-08-23 by the
+  six-tranche fork build and recorded by the workshop seed. The later delivered
+  Integration base was not substituted for it. The aggregate audit range was
+  `ea45749278bac648ab13a4280a6035012854d717..fb1b6b66476fc83c1453b0cde8fe2a50166eb395`
+  (2 commits): v0.7.1 release documentation and synchronous release jobs,
+  documenting a compatibility fix already inside the prior frontier, followed
+  by removal of stock zmx's stale `list --where` references. No new upstream
+  runtime capability landed in the range.
+- Dispositions: retire (0), repair (1) — Discovery and records, whose real
+  fork `--where` implementation already restored accurate README/help/fish
+  completion in `241efd3`; unchanged (7) — Portable wire, Negotiated clients,
+  Multi-client terminal ownership, Restore and exit, Create, Scrollback, and
+  Companion build. The audit found no missed product repair.
+
 ## Carried state
 
-Every entry below remains downstream-only at upstream `fb1b6b6`; that
-baseline's changes and current implementation were read, and no upstream
-replacement satisfies one. Every listed commit is an ancestor of the exact
-published integration and passed the fork and fmx gates above. Each feature is
-retired only after an equivalent upstream implementation is read and its path
-exercised.
+Every entry below remains downstream-only at the audited-upstream frontier
+`fb1b6b6`; current upstream semantics were inspected against every entry, and
+no upstream replacement satisfies one. Every listed commit is an ancestor of
+the exact published integration and passed the fork and fmx gates above. Each
+feature is retired only after an equivalent upstream implementation is read
+and its path exercised.
 
 - Portable wire: `e0da029`, `5c07655`, `bf2cc50`.
 - Negotiated clients: `a094f6c`, `9e33017`, `079e9f5`.
@@ -95,3 +114,11 @@ exercised.
   lease, moved fmx to its matching build in `89a4041`, and reconciled the
   namespace while preserving all three `push-*` heads. Updated the workshop
   entrypoint to the installed shared-skill namespace.
+- 2026-08-29 retrospective: Reconstructed the prior audited frontier at
+  `ea45749278bac648ab13a4280a6035012854d717` and audited the aggregate
+  `ea45749278bac648ab13a4280a6035012854d717..fb1b6b66476fc83c1453b0cde8fe2a50166eb395`
+  (2 commits): v0.7.1 release documentation/synchronous release jobs and the
+  stale stock `list --where` cleanup, with no new runtime capability.
+  Dispositions were retire 0, repair 1 (Discovery and records, already repaired
+  in `241efd3`), unchanged 7; the frontier advanced to `fb1b6b6` without a
+  product republish or gate.
