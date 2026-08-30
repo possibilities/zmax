@@ -9,7 +9,7 @@ set -euo pipefail
 # push of declared refs that leaves all other heads unchanged) are the skill's
 # and are tested there.
 
-skill_dir="${MAINTAIN_SKILL_DIR:-$HOME/.local/share/agentstart/capabilities/packs/common/skills/maintain}"
+skill_dir="${MAINTAIN_SKILL_DIR:-$HOME/.local/share/agentstart/resources/skills/maintain}"
 script="$skill_dir/scripts/reconcile-branches.sh"
 if [ ! -f "$script" ]; then
     printf 'zmax branches: the maintain skill is not installed at %s (render ~/code/agentguidance, or set MAINTAIN_SKILL_DIR)\n' \
