@@ -17,6 +17,7 @@ if [ ! -f "$script" ]; then
     exit 1
 fi
 
+export MAINTAIN_WORKSHOP="$(cd "$(dirname "$0")/.." && pwd)"
 export MAINTAIN_CHECKOUT="${ZMAX_ZMX_CHECKOUT:-$HOME/src/zmx}"
 export MAINTAIN_FORK_REPO=possibilities/zmx
 export MAINTAIN_UPSTREAM_REPO=neurosnap/zmx
