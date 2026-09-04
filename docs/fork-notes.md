@@ -3,7 +3,7 @@
 What the sessions that built the fork (tranches 1–6, 2026-08-22/23) learned
 about zmx the hard way, kept here because no code comment says it and the
 next rebase will meet it again. The protocol itself is documented by its
-golden tests (`src/ipc.zig` in the fork, `src/zmx-protocol.ts` in fmx);
+golden tests (`src/ipc.zig` in the fork, `src/zmx-protocol.ts` in smolmux);
 this is the surrounding knowledge.
 
 ## zmx internals
@@ -120,4 +120,4 @@ does, so nothing upstream had to change with it.
 - Bun's `socket.write()` can return fewer bytes than given; the `Transport`
   queue in `src/zmx-client.ts` handles that and waits for `drain`.
 - `Bun.connect`'s `open` handler must not return a value (its type is `void`).
-- fmx's tsconfig `include` did not cover `scripts/`; it does now.
+- smolmux's tsconfig `include` did not cover `scripts/`; it does now.

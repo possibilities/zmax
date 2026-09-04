@@ -6,7 +6,7 @@ procedure itself is the shared `maintain` skill, which every workshop runs.
 _Avoid_: wrapper, patch repo.
 
 **Integration branch** — `possibilities/zmx:integration`, the linear stack of
-every carried feature above current upstream, and the only ref fmx's Companion
+every carried feature above current upstream, and the only ref smolmux's Companion
 pin may name.
 _Avoid_: install branch, local main, feature branch.
 
@@ -28,13 +28,13 @@ _Avoid_: permanent patch, downstream fix.
 
 **Offer** — A narrow plank proposed upstream: a `fix/<name>` or `feat/<name>`
 branch cut from current `origin/main`, written as upstream would write it with
-no fmx concept in it, pushed to the fork when its pull request opens. An offer
+no smolmux concept in it, pushed to the fork when its pull request opens. An offer
 is evidence of intent, not a dependency: the stack carries the behavior
 whether or not the offer lands, and "landed" is read from upstream `main`,
 never from the request's state.
 _Avoid_: PR branch, upstreamed patch, carry.
 
-**Companion pin** — fmx's `companion.json`: the integration commit an fmx
+**Companion pin** — smolmux's `companion.json`: the integration commit an smolmux
 release is built with and the build string `<zon version>+fmx.<12 hex>` a
 Companion built from it reports. The consumer binding of this workshop; moved
 only by `scripts/pin-companion.sh`.
@@ -48,6 +48,6 @@ _Avoid_: quarantine branch, stale branch, automatic archive.
 
 **Maintenance cycle** — One `/maintain` run that reviews upstream movement and
 the offers' fate, rebases the stack onto current upstream, gates the
-candidate, publishes `integration` under a lease, moves fmx's pin, and updates
+candidate, publishes `integration` under a lease, moves smolmux's pin, and updates
 the scratchpad.
-_Avoid_: update, release (that is fmx's act).
+_Avoid_: update, release (that is smolmux's act).

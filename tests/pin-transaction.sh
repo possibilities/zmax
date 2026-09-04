@@ -36,21 +36,21 @@ git init --quiet --bare "$zmx_fork"
 git -C "$zmx" remote add fork "$zmx_fork"
 git -C "$zmx" push --quiet fork main integration
 
-# fmx: a pin at upstream's commit, on main, with a bare origin.
-fmx="$test_root/fmx"
-fmx_origin="$test_root/fmx-origin.git"
-git init --quiet --initial-branch=main "$fmx"
-git -C "$fmx" config user.name zmax-test
-git -C "$fmx" config user.email zmax@example.invalid
+# smolmux: a pin at upstream's commit, on main, with a bare origin.
+smolmux="$test_root/smolmux"
+smolmux_origin="$test_root/smolmux-origin.git"
+git init --quiet --initial-branch=main "$smolmux"
+git -C "$smolmux" config user.name zmax-test
+git -C "$smolmux" config user.email zmax@example.invalid
 old_sha=$(git -C "$zmx" rev-parse main)
 printf '{\n  "repository": "https://github.com/possibilities/zmx.git",\n  "branch": "integration",\n  "commit": "%s",\n  "build": "0.7.0+fmx.%s"\n}\n' \
-    "$old_sha" "${old_sha:0:12}" >"$fmx/companion.json"
-git -C "$fmx" add companion.json
-git -C "$fmx" commit --quiet -m pin
-git init --quiet --bare "$fmx_origin"
-git -C "$fmx" remote add origin "$fmx_origin"
-git -C "$fmx" push --quiet origin main
-git -C "$fmx" branch --set-upstream-to=origin/main main >/dev/null
+    "$old_sha" "${old_sha:0:12}" >"$smolmux/companion.json"
+git -C "$smolmux" add companion.json
+git -C "$smolmux" commit --quiet -m pin
+git init --quiet --bare "$smolmux_origin"
+git -C "$smolmux" remote add origin "$smolmux_origin"
+git -C "$smolmux" push --quiet origin main
+git -C "$smolmux" branch --set-upstream-to=origin/main main >/dev/null
 
 fake_bin="$test_root/bin"
 mkdir "$fake_bin"
@@ -59,7 +59,7 @@ ln -s "$root/tests/fixtures/fake-zig.sh" "$fake_bin/zig"
 run_pin() {
     PATH="$fake_bin:$PATH" \
     ZMAX_ZMX_CHECKOUT="$zmx" \
-    ZMAX_FMX_CHECKOUT="$fmx" \
+    ZMAX_SMOLMUX_CHECKOUT="$smolmux" \
     ZMAX_PIN_SKIP_TESTS=1 \
     "$root/scripts/pin-companion.sh" "$@"
 }
@@ -67,7 +67,7 @@ run_pin() {
 run_pin_with_tests() {
     PATH="$fake_bin:$PATH" \
     ZMAX_ZMX_CHECKOUT="$zmx" \
-    ZMAX_FMX_CHECKOUT="$fmx" \
+    ZMAX_SMOLMUX_CHECKOUT="$smolmux" \
     ZMAX_PIN_SKIP_TESTS=0 \
     "$root/scripts/pin-companion.sh" "$@"
 }
@@ -80,7 +80,7 @@ printf '%s\n' "$check_output" | grep -F "PIN  $old_sha -> $integration_sha" >/de
     || fail "--check did not plan the pin move"
 printf '%s\n' "$check_output" | grep -F "BUILD 0.7.0+fmx.${old_sha:0:12} -> $expected_build" >/dev/null \
     || fail "--check did not plan the build string"
-[ -z "$(git -C "$fmx" status --porcelain)" ] || fail "--check changed fmx"
+[ -z "$(git -C "$smolmux" status --porcelain)" ] || fail "--check changed smolmux"
 
 # Unpublished integration is refused before anything is built.
 printf 'more\n' >>"$zmx/companion"
@@ -102,9 +102,9 @@ set -e
 [ "$misreport_status" -ne 0 ] || fail "accepted a Companion reporting the wrong build"
 printf '%s\n' "$misreport_output" | grep -F "reports '0.7.0', not $expected_build" >/dev/null \
     || fail "did not explain the misreported build"
-grep -F "\"commit\": \"$old_sha\"" "$fmx/companion.json" >/dev/null \
+grep -F "\"commit\": \"$old_sha\"" "$smolmux/companion.json" >/dev/null \
     || fail "a refused pin changed companion.json"
-[ -z "$(git -C "$fmx" status --porcelain)" ] || fail "a refused pin left fmx dirty"
+[ -z "$(git -C "$smolmux" status --porcelain)" ] || fail "a refused pin left smolmux dirty"
 [ "$(git -C "$zmx" worktree list | wc -l | tr -d ' ')" = 1 ] \
     || fail "a refused pin left a build worktree"
 
@@ -112,35 +112,35 @@ grep -F "\"commit\": \"$old_sha\"" "$fmx/companion.json" >/dev/null \
 set +e
 FAKE_ZIG_FAIL=1 run_pin --apply >/dev/null 2>&1 && fail "accepted a failed build"
 set -e
-[ -z "$(git -C "$fmx" status --porcelain)" ] || fail "a failed build left fmx dirty"
+[ -z "$(git -C "$smolmux" status --porcelain)" ] || fail "a failed build left smolmux dirty"
 
-# A failed fmx gate restores companion.json byte for byte, including its final
+# A failed smolmux gate restores companion.json byte for byte, including its final
 # newline. Command substitution used to lose it and leave the clean checkout
 # dirty after the otherwise-correct rollback.
 ln -s "$(command -v false)" "$fake_bin/bun"
-pin_before_failure=$(git -C "$fmx" hash-object companion.json)
+pin_before_failure=$(git -C "$smolmux" hash-object companion.json)
 set +e
 gate_failure_output=$(run_pin_with_tests --apply 2>&1)
 gate_failure_status=$?
 set -e
-[ "$gate_failure_status" -ne 0 ] || fail "accepted a failed fmx gate"
-printf '%s\n' "$gate_failure_output" | grep -F 'fmx typecheck failed against the new pin' >/dev/null \
-    || fail "did not explain the failed fmx gate"
-[ "$(git -C "$fmx" hash-object companion.json)" = "$pin_before_failure" ] \
-    || fail "a failed fmx gate did not restore companion.json byte for byte"
-[ -z "$(git -C "$fmx" status --porcelain)" ] || fail "a failed fmx gate left fmx dirty"
+[ "$gate_failure_status" -ne 0 ] || fail "accepted a failed smolmux gate"
+printf '%s\n' "$gate_failure_output" | grep -F 'smolmux typecheck failed against the new pin' >/dev/null \
+    || fail "did not explain the failed smolmux gate"
+[ "$(git -C "$smolmux" hash-object companion.json)" = "$pin_before_failure" ] \
+    || fail "a failed smolmux gate did not restore companion.json byte for byte"
+[ -z "$(git -C "$smolmux" status --porcelain)" ] || fail "a failed smolmux gate left smolmux dirty"
 rm "$fake_bin/bun"
 
 # The real thing: pin written, committed on main, pushed.
 run_pin --apply >/dev/null
-grep -F "\"commit\": \"$integration_sha\"" "$fmx/companion.json" >/dev/null \
+grep -F "\"commit\": \"$integration_sha\"" "$smolmux/companion.json" >/dev/null \
     || fail "the pin was not moved"
-grep -F "\"build\": \"$expected_build\"" "$fmx/companion.json" >/dev/null \
+grep -F "\"build\": \"$expected_build\"" "$smolmux/companion.json" >/dev/null \
     || fail "the build string was not written"
-[ -z "$(git -C "$fmx" status --porcelain)" ] || fail "the pin was not committed"
-[ "$(git --git-dir="$fmx_origin" rev-parse main)" = "$(git -C "$fmx" rev-parse main)" ] \
+[ -z "$(git -C "$smolmux" status --porcelain)" ] || fail "the pin was not committed"
+[ "$(git --git-dir="$smolmux_origin" rev-parse main)" = "$(git -C "$smolmux" rev-parse main)" ] \
     || fail "the pin was not pushed"
-git -C "$fmx" log -1 --format=%s | grep -F "Pin the Companion to zmx ${integration_sha:0:12}" >/dev/null \
+git -C "$smolmux" log -1 --format=%s | grep -F "Pin the Companion to zmx ${integration_sha:0:12}" >/dev/null \
     || fail "the pin commit is not named"
 [ "$(git -C "$zmx" worktree list | wc -l | tr -d ' ')" = 1 ] \
     || fail "the build worktree was not removed"

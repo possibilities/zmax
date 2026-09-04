@@ -11,13 +11,13 @@ entries on every maintenance cycle and appends one compact history entry.
   (#250)").
 - Published integration: `2ffb1c1e425f56a996577d344f24417f8dd6d603`, 25
   commits above the base, with protocol version 1 unchanged.
-- Companion pin in fmx: commit `2ffb1c1e425f`, build
-  `0.7.0+fmx.2ffb1c1e425f`, moved by `scripts/pin-companion.sh` in fmx commit
-  `89a4041a962c35f763d132a49452c238af904e2d`. The editable fmx Companion was
-  refreshed to the same build. This pin on fmx main is not itself a release.
+- Companion pin in smolmux: commit `2ffb1c1e425f`, build
+  `0.7.0+fmx.2ffb1c1e425f`, moved by `scripts/pin-companion.sh` in smolmux commit
+  `89a4041a962c35f763d132a49452c238af904e2d`. The editable smolmux Companion was
+  refreshed to the same build. This pin on smolmux main is not itself a release.
 - Gate as last run: formatting, Debug build, Zig tests, bats 94/94, and the
   Companion ReleaseFast build passed; macOS and Linux compile checks also
-  passed. Clean fmx main passed typecheck, 342 tests with one expected skip,
+  passed. Clean smolmux main passed typecheck, 342 tests with one expected skip,
   and the Companion-backed PTY test 1/1 against that exact build.
 
 ## Audited-upstream frontier
@@ -44,7 +44,7 @@ entries on every maintenance cycle and appends one compact history entry.
 Every entry below remains downstream-only at the audited-upstream frontier
 `fb1b6b6`; current upstream semantics were inspected against every entry, and
 no upstream replacement satisfies one. Every listed commit is an ancestor of
-the exact published integration and passed the fork and fmx gates above. Each
+the exact published integration and passed the fork and smolmux gates above. Each
 feature is retired only after an equivalent upstream implementation is read
 and its path exercised.
 
@@ -95,15 +95,15 @@ and its path exercised.
 
 - 2026-08-23: Seeded the workshop from the end of tranche 6 and reconciled
   the fork's branch namespace for the first time. No maintenance cycle has
-  run. Later that day: the first Linux Companion build (fmx's 0.2.0 release
+  run. Later that day: the first Linux Companion build (smolmux's 0.2.0 release
   run) exposed the @cImport stat; fixed on `integration` and the pin moved
   through `pin-companion.sh` — its first real use.
 - 2026-08-23: Added multi-client terminal sizing and opt-in final-client
   lifecycle as `0081b6e`, gated the 24-commit stack, published `integration`,
-  and transactionally moved fmx to build `0.7.0+fmx.0081b6ea9795` (346 tests,
+  and transactionally moved smolmux to build `0.7.0+fmx.0081b6ea9795` (346 tests,
   12/12 PTY).
 - 2026-08-23: Made passive mouse motion and focus gain take sizing ownership
-  as `bea6677`, gated and published the 25-commit stack, moved fmx to
+  as `bea6677`, gated and published the 25-commit stack, moved smolmux to
   `0.7.0+fmx.bea6677b7762` (361 tests, 12/12 PTY), and made a failed pin gate
   restore `companion.json` byte for byte.
 - 2026-08-25: Removed automatic branch deletion inference and atomically
@@ -111,7 +111,7 @@ and its path exercised.
   `DELETEME/*` names without changing their tips.
 - 2026-08-29: Advanced the mirror to `fb1b6b6`, repaired and adversarially
   reviewed the rebased stack, gated and published `2ffb1c1` under the original
-  lease, moved fmx to its matching build in `89a4041`, and reconciled the
+  lease, moved smolmux to its matching build in `89a4041`, and reconciled the
   namespace while preserving all three `push-*` heads. Updated the workshop
   entrypoint to the installed shared-skill namespace.
 - 2026-08-29 retrospective: Reconstructed the prior audited frontier at
@@ -122,3 +122,24 @@ and its path exercised.
   Dispositions were retire 0, repair 1 (Discovery and records, already repaired
   in `241efd3`), unchanged 7; the frontier advanced to `fb1b6b6` without a
   product republish or gate.
+
+## The consumer is called smolmux; two fork names deliberately are not
+
+The consumer this fork serves was renamed from fmx to smolmux, and this
+repository now says smolmux everywhere it means that program. Two names inside
+the fork itself did not move, and neither is an oversight.
+
+`-Dversion=<zon version>+fmx.<12 hex>` stays. `build.zig` refuses a version
+naming fmx unless `-Dcompanion` was passed, and that refusal is what stops a
+stock build passing the consumer's pin and then keeping a human's by-hand
+sessions in the stock directory. Renaming the marker without moving the guard
+would silently disarm it.
+
+The `-Dcompanion` directory default stays `/tmp/fmx-<uid>/zmx`. MAINTAIN.md
+names it as a carried feature, so changing it is an inventory change with a
+gate rather than a rename.
+
+Both belong in a stack commit with the gate that goes with them. Until then
+smolmux keeps its own sockets in `/tmp/smolmux-<uid>` and passes `ZMX_DIR` on
+every Companion command, so nothing is broken; the only cost is that a by-hand
+`smolmux-zmx list` needs the directory named, which `smolmux doctor` prints.

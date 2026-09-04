@@ -1,7 +1,7 @@
 # zmax agent guidance
 
 This repository owns delivery and maintenance of the operator's zmx fork —
-the Companion fmx bundles as `fmx-zmx`. Read `CONTEXT.md`, `MAINTAIN.md`, and
+the Companion smolmux bundles as `smolmux-zmx`. Read `CONTEXT.md`, `MAINTAIN.md`, and
 `SCRATCHPAD.md` before changing the fork or its pin.
 
 ## Ownership
@@ -25,15 +25,15 @@ the Companion fmx bundles as `fmx-zmx`. Read `CONTEXT.md`, `MAINTAIN.md`, and
   linear stack, no carry heads, open-request heads validated, and explicit
   `DELETEME/` markers — and nothing else. Reconciliation leaves all undeclared
   refs unchanged; the mechanics live and are tested in agentguidance.
-- `scripts/pin-companion.sh` is the consumer step: it moves fmx's Companion
-  pin (`~/code/fmx/companion.json`) to the published `integration` commit
-  after building that commit and running fmx's suite against it. It never
-  rebases, publishes, or cuts an fmx release.
+- `scripts/pin-companion.sh` is the consumer step: it moves smolmux's Companion
+  pin (`~/code/smolmux/companion.json`) to the published `integration` commit
+  after building that commit and running smolmux's suite against it. It never
+  rebases, publishes, or cuts an smolmux release.
 
 The checkout being maintained is `~/src/zmx`, with `fork` pointing to
 `possibilities/zmx` and `origin` pointing to `neurosnap/zmx`. Its
-`integration` branch is the only ref fmx's pin may name. zmx has no agent
-guidance of its own; fmx's `AGENTS.md` and `CONTEXT.md` carry the Companion's
+`integration` branch is the only ref smolmux's pin may name. zmx has no agent
+guidance of its own; smolmux's `AGENTS.md` and `CONTEXT.md` carry the Companion's
 contract and language, and `docs/fork-notes.md` keeps what building the fork
 taught about zmx's internals and wire — read it before a rebase touches
 `loop.zig`, `daemonize.zig`, or `ipc.zig`.
@@ -66,7 +66,7 @@ tests/validate.sh
 ```
 
 Fork work follows `MAINTAIN.md`'s gate in full — fmt, build, unit tests, bats,
-a Companion release build, and fmx's suite against it. Moving the pin is
+a Companion release build, and smolmux's suite against it. Moving the pin is
 `scripts/pin-companion.sh`, never a hand edit of `companion.json`.
 
 Finished work lands on `main` and is pushed.

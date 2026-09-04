@@ -1,9 +1,9 @@
 # zmx fork maintenance
 
 This repository delivers and maintains our fork of
-[`neurosnap/zmx`](https://github.com/neurosnap/zmx): the Companion that fmx
-bundles as `fmx-zmx`, which owns each agent's process and terminal so both
-survive fmx closing. It owns the behavior fmx needs independently of upstream
+[`neurosnap/zmx`](https://github.com/neurosnap/zmx): the Companion that smolmux
+bundles as `smolmux-zmx`, which owns each agent's process and terminal so both
+survive smolmux closing. It owns the behavior smolmux needs independently of upstream
 review or publication while continuously rebuilding that behavior on current
 upstream zmx. `/maintain` — the shared `maintain` skill — runs a maintenance
 cycle from this file; this file is the whole of what that skill knows about
@@ -12,17 +12,17 @@ zmx.
 ## Purpose
 
 Keep a published `integration` branch of zmx that carries every feature below,
-rebuilt on current upstream every cycle, and consumed by fmx through its
+rebuilt on current upstream every cycle, and consumed by smolmux through its
 Companion pin. The fork is narrow and purpose-specific: zmx stays a session
-daemon with a shadow terminal, fmx stays the renderer and organizer, and
-anything about agent status, heartbeats, or fx itself is fmx's problem, never
+daemon with a shadow terminal, smolmux stays the renderer and organizer, and
+anything about agent status, heartbeats, or fx itself is smolmux's problem, never
 the fork's. Nothing here installs a `zmx` on the system path, and the fork
 never shadows or depends on a zmx a human may have installed.
 
 ## Upstream
 
 - Bound checkout: `~/src/zmx`. `origin` is `neurosnap/zmx`; `fork` is
-  `possibilities/zmx`. zmx has no `AGENTS.md`; fmx's (`~/code/fmx/AGENTS.md`
+  `possibilities/zmx`. zmx has no `AGENTS.md`; smolmux's (`~/code/smolmux/AGENTS.md`
   and `CONTEXT.md`) name the Companion's contract and the language —
   **Companion**, **Home**, **Companion pin**, **Restore** — and are read before
   touching the fork.
@@ -35,10 +35,10 @@ never shadows or depends on a zmx a human may have installed.
   without GitHub marking it merged; larger features start with issue alignment
   and land in narrow planks. The libzmx conversation is
   [#127](https://github.com/neurosnap/zmx/issues/127); our position there is
-  that fmx needs the standalone daemon's socket boundary, and that the fork is
+  that smolmux needs the standalone daemon's socket boundary, and that the fork is
   not an attempt to pull zmx away from its goals.
 - What we offer: narrow planks, one at a time, each shaped as upstream would
-  write it and carrying no fmx concept — a fix to a real upstream defect, or a
+  write it and carrying no smolmux concept — a fix to a real upstream defect, or a
   seam upstream could want on its own terms. The Companion protocol
   (`Hello`/`Welcome`, the restore boundary, `create`, discovery, records, the
   `-Dcompanion` build) is never offered; it is the fork's reason to exist. An
@@ -69,7 +69,7 @@ never shadows or depends on a zmx a human may have installed.
     flush before closing, exit attach with the status. Filed as
     [neurosnap/zmx#247](https://github.com/neurosnap/zmx/issues/247). Stack
     commits `4e29345`, `23e5519`, `e81ef16`, `bbb26d4` carry the fork's
-    version; fmx reads exit records, never `attach`.
+    version; smolmux reads exit records, never `attach`.
   - `fix/daemon-dev-tty` (not yet cut) — the daemon's `getTerminalSize` opens
     `/dev/tty` after `setsid()`, which fails with ENXIO and prints an
     "unexpected errno: 6" trace in Debug builds on every session start; map
@@ -85,7 +85,7 @@ never shadows or depends on a zmx a human may have installed.
 - Mirror branch: `main`, an exact mirror of `neurosnap/zmx:main` locally and on
   the fork. Never an integration base with downstream-only commits.
 - Integration branch: `integration`, every carried feature together. It is the
-  only ref fmx's pin may name and never a development branch of its own:
+  only ref smolmux's pin may name and never a development branch of its own:
   work lands on it through a rebased candidate.
 - Composition: linear stack. `integration` is one linear series of commits
   above `origin/main`, rebased as a whole onto current upstream in a scratch
@@ -126,7 +126,7 @@ later cycle reconciles only what this section names.
 
 - The wire is an explicit little-endian codec with a frame cap; `Header` and
   `Resize` bytes, every control payload, and the refusal bytes are frozen by
-  golden tests that fmx's `src/zmx-protocol.ts` mirrors. Control payloads are
+  golden tests that smolmux's `src/zmx-protocol.ts` mirrors. Control payloads are
   fixed-width binary; JSON is for CLI output only.
 
 ### Negotiated clients
@@ -187,22 +187,32 @@ later cycle reconciles only what this section names.
 
 ### Companion build
 
-- `zig build -Dcompanion` keeps fmx's directory by default —
+- `zig build -Dcompanion` keeps a directory of its own by default —
   `/tmp/fmx-<uid>/zmx`, logs under it, created 0700/0600 and refused unless
-  private and the caller's own — so `fmx-zmx` by hand needs no `ZMX_DIR` and
-  never touches a stock zmx's directory. `-Dversion=<zon version>+fmx.<12 hex>`
-  is what the Companion reports; a `+fmx.` version without `-Dcompanion`
-  refuses to build. `version` and `help` say what a Companion build's
+  private and the caller's own — and never touches a stock zmx's directory.
+  `-Dversion=<zon version>+fmx.<12 hex>` is what the Companion reports; a
+  `+fmx.` version without `-Dcompanion` refuses to build.
+- **Both of those still say fmx, and that is deliberate.** The consumer was
+  renamed to smolmux; the fork was not, because each name is load-bearing
+  here. `build.zig` refuses a version naming fmx unless `-Dcompanion` was
+  passed, which is what stops a stock build passing the consumer's pin and
+  then keeping a human's own sessions in the wrong directory — renaming the
+  marker without moving the guard would silently disarm it. The directory
+  default is a carried feature this section names, so changing it is an
+  inventory change with a gate. Both belong in a stack commit of their own,
+  not in a consumer's rename, and until then smolmux keeps its own files in
+  `/tmp/smolmux-<uid>` and passes `ZMX_DIR` on every command; `smolmux doctor`
+  prints the by-hand command with the directory named. `version` and `help` say what a Companion build's
   defaults are.
 
 ### Scope
 
 - Keep changes mechanically close to upstream where that is cheap: later
   rebases and offers both depend on it. No ghostty-free daemon path, no
-  embedder loop, no in-process Zig consumer — fmx talks over the socket.
-- The protocol version in `src/ipc.zig` does not move on its own: fmx's
+  embedder loop, no in-process Zig consumer — smolmux talks over the socket.
+- The protocol version in `src/ipc.zig` does not move on its own: smolmux's
   `src/zmx-protocol.ts` mirrors its constants and golden bytes, and a bump
-  strands every agent a previous Companion is still holding. fmx's
+  strands every agent a previous Companion is still holding. smolmux's
   `AGENTS.md` says what must exist first (a drain or a carry for
   survivors); a stack change that needs a new version waits for that, and
   the two move together in one pin.
@@ -220,12 +230,12 @@ companion_build="$(grep -m 1 -E '^[[:space:]]*\.version = "' build.zig.zon | sed
 zig build -Dcompanion -Doptimize=ReleaseFast -Dversion="$companion_build" --prefix "$(mktemp -d)/companion"
 ```
 
-Also run the fmx suite against that Companion build before publishing, from
-a clean `~/code/fmx` on `main`:
+Also run the smolmux suite against that Companion build before publishing, from
+a clean `~/code/smolmux` on `main`:
 
 ```sh
-FMX_ZMX_PATH="<prefix>/bin/zmx" bun test
-FMX_ZMX_PATH="<prefix>/bin/zmx" FMX_RUN_PTY_TESTS=1 bun test tests/multiplexer.e2e.test.ts
+SMOLMUX_ZMX_PATH="<prefix>/bin/zmx" bun test
+SMOLMUX_ZMX_PATH="<prefix>/bin/zmx" SMOLMUX_RUN_PTY_TESTS=1 bun test tests/multiplexer.e2e.test.ts
 ```
 
 No external proof is required: the fork has no hosted CI. `test/create.bats`
@@ -234,7 +244,7 @@ failure there alone is rerun, not waved through.
 
 ## Consumer
 
-fmx's Companion pin. After the leased push of `integration`, run:
+smolmux's Companion pin. After the leased push of `integration`, run:
 
 ```sh
 ~/code/zmax/scripts/pin-companion.sh --apply
@@ -242,15 +252,15 @@ fmx's Companion pin. After the leased push of `integration`, run:
 
 It reads the published `integration` commit from the bound checkout (which
 must equal `fork/integration`), derives the build string from the fork's
-`build.zig.zon`, pulls fmx `main` (another session commits there), builds the
+`build.zig.zon`, pulls smolmux `main` (another session commits there), builds the
 Companion ReleaseFast from a detached worktree at that commit, writes
-`~/code/fmx/companion.json`, runs fmx's suite and e2e against the build,
-commits the pin on fmx `main`, pushes, and then refreshes this machine's
-editable fmx's Companion (`~/.local/bin/fmx-zmx`, through fmx's
+`~/code/smolmux/companion.json`, runs smolmux's suite and e2e against the build,
+commits the pin on smolmux `main`, pushes, and then refreshes this machine's
+editable smolmux's Companion (`~/.local/bin/smolmux-zmx`, through smolmux's
 `scripts/install-companion.sh`) — or reverts the file and reports which gate
 failed. It says when the fork's `build.zig.zon` changed since the
-previous pin, because fmx's `THIRD_PARTY_NOTICES.md` Companion section is kept
-by hand against it. Cutting an fmx release is a separate, deliberate act.
+previous pin, because smolmux's `THIRD_PARTY_NOTICES.md` Companion section is kept
+by hand against it. Cutting an smolmux release is a separate, deliberate act.
 
 ## Notify
 
