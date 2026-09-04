@@ -213,6 +213,15 @@ later cycle reconciles only what this section names.
   the commit is allowed to fail, so the ownership acknowledgement is only
   logged. A source that hands its session on skips its whole teardown: it
   signals nothing, writes no exit record, and deletes no socket.
+- The snapshot is its own serializer, not the one a restore sends. It emits a
+  screen's scrollback and visible area as one continuous stream with no clear,
+  replays the scrolls a formatter trims along with the blank row a cursor sits
+  on, and positions the cursor last — so nothing the child writes next lands
+  on a line it should have kept. Terminal state precedes any alternate-screen
+  content, because which screen content lands on is itself a mode, and the
+  primary screen crosses even while a full-screen program owns the display,
+  which no restore carries. A handoff therefore loses no scrollback; a restore
+  still loses a screenful, which Restore and exit names.
 - Parenthood does not cross. An adopted child is observed by probing its pid
   after the pty reaches EOF, never by `waitpid`, and `Exit` carries a flags
   byte whose low bit means the status is unknown — placed so the zero every

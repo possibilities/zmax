@@ -59,9 +59,9 @@ and its path exercised.
   repair in `f1f7645` and swept-socket record preservation in `6526e5e`.
 - Scrollback: `452f452`, `15327ca`; its early-ending transfer race test is
   made deterministic by `e4064d1`.
-- Swappable PTYs: `b5c14ab` on `feat/swappable-ptys` in
+- Swappable PTYs: `a7908d1` on `feat/swappable-ptys` in
   `~/src/zmx-swappable-ptys`. Built 2026-09-04, gated, and **not yet on
-  `integration`**: it is the next commit for the top of the stack, and fmx's
+  `integration`**: it is the next commit for the top of the stack, and smolmux's
   `src/zmx-protocol.ts` mirror of the `Exit` flags byte has to follow before
   the pin moves.
 - Companion build: `52d25cf`, `b5889fb`, `8a536ca`.
@@ -99,20 +99,22 @@ and its path exercised.
   clears the visible screen between the scrollback and the active screen, so
   every restore drops exactly one screenful — and not the oldest part, but the
   screenful immediately above the viewport, which is the run a reader most
-  wants. The fmx redesign session measured it against a Companion at the
+  wants. The smolmux redesign session measured it against a Companion at the
   current pin: 5 rows lost L192–L196 of 200, 10 rows lost L182–L186, 20 rows
   lost L162–L166. It compounds: a Session that has reattached several times
-  has several holes, and fmx's new `session.capture` scrollback bound reads
+  has several holes, and smolmux's new `session.capture` scrollback bound reads
   the emulator that replay populates. The handoff path no longer has it —
-  `util.serializeTerminalForHandoff` in `b5c14ab` round-trips losslessly and
+  `util.serializeTerminalForHandoff` in `a7908d1` round-trips losslessly and
   is unit-tested for it — and the same serializer is the candidate fix for
   restore. It was scoped to handoffs deliberately: the clear was upstream's
-  fix for issue #31, restore is a carried feature fmx depends on for every
+  fix for issue #31, restore is a carried feature smolmux depends on for every
   attach, and changing what every client receives is its own decision with its
   own gate. Both consumers clear the terminal before the restore bytes arrive
-  (zmx `attach` writes the clear itself, fmx prepends RIS), which is the
-  argument that the internal clear is now redundant for them; a consumer that
-  does neither is the case to check before moving.
+  smolmux does it twice over, prepending RIS to the first Restore bytes in its
+  thin Client and writing RIS into each Session's emulator at `restoreBegin`,
+  and zmx `attach` writes the clear itself. So the clear inside the snapshot
+  buys either of them nothing and costs them the screenful; a consumer that
+  clears neither way is the case to check before moving.
 - One gate step fails on the delivered baseline `2ffb1c1` and on the
   swappable-PTYs commit alike, so it is machine drift rather than a fork
   regression, verified by building the baseline separately and running the
@@ -120,39 +122,32 @@ and its path exercised.
   directory private" fails on the mode of a directory it creates under the
   test's own tmp dir. The last cycle recorded bats 94/94, so this arrived with
   something on this machine, not with the fork.
-- The consumer is being renamed from fmx to smolmux by another live session,
-  which owns that sweep across this repository including
-  `scripts/pin-companion.sh`, whose default checkout path is the one hard
-  coupling rather than prose. This branch predates the sweep and rebases onto
-  it. Two deliberate non-changes it will leave alone, both fork concerns for a
-  later stack commit rather than rename work: the Companion build string stays
-  `<version>+fmx.<commit>`, because `build.zig` refuses a version naming fmx
-  without `-Dcompanion` and moving the marker without moving the guard would
-  silently disarm it; and the `-Dcompanion` directory default stays
-  `/tmp/fmx-<uid>/zmx`, which this file's Features section names as carried
-  behaviour, so changing it is an inventory change with a gate.
+- This branch was built before the consumer's rename and rebased onto it at
+  `c86e296`; the fork-side names that deliberately stay `fmx` are recorded in
+  this file's own section on that, and nothing here duplicates it.
 
 ## History
 
-- 2026-09-04: Built Swappable PTYs as `6d639c5` on `feat/swappable-ptys`
-  after asking the fmx redesign session whether the minimal fmx still needs a
+- 2026-09-04: Built Swappable PTYs as `a7908d1` on `feat/swappable-ptys`
+  after asking the smolmux redesign session whether the minimal consumer still
+  needs a
   child's exact exit status; it does not, and is making `session.exited`'s
-  code and signal nullable. Gated: fmt, Debug build, Zig tests, bats 103/104
-  (the pre-existing companion directory-mode failure above), a Companion
-  ReleaseFast build of `0.7.0+fmx.2ffb1c1e425f`, and fmx's suite against that
-  build. Testing under load then found the handoff losing a screenful, and
-  sometimes a single line, at the seam: the first traced to the restore
-  serializer's clear and the second to a formatter saying nothing about the
-  blank row a cursor sits on, which left the replay one scroll behind so the
-  child's next line overwrote the last one it should have kept. Both are fixed
-  by a handoff-specific serializer, guarded by three round-trip unit tests and
-  an end-to-end one, and the commit was amended to `b5c14ab`. The gate was
-  then re-run in full against that exact commit: fmt, Debug build, Zig tests,
-  bats 104/105 (the companion directory-mode failure above), a Companion
-  ReleaseFast build of `0.7.0+fmx.b5c14ab4ecda`, and the consumer suite in a
-  clean worktree of smolmux `main` at `a7755e3` — 229 pass, 3 skip, 0 fail,
-  and the Companion-backed PTY end-to-end file 3/3. Not published, not
-  pinned.
+  code and signal nullable. Testing under load then found three losses at the
+  seam, all in what the snapshot said rather than in the handoff itself: a
+  screenful, from reusing the restore serializer, whose clear costs the screen
+  that had scrolled into view; a single line, from a formatter saying nothing
+  about the blank row a cursor sits on, which left the replay one scroll
+  behind so the child's next line overwrote the last one it should have kept;
+  and, for a session in the alternate screen, the whole screen, because
+  content was emitted before the mode that decides which screen it lands on.
+  All three are fixed by a handoff-specific serializer that also carries the
+  primary screen a restore never sends, guarded by four round-trip unit tests
+  and an end-to-end one. The gate then ran in full against the final commit
+  `a7908d1`: fmt, Debug build, Zig tests, bats 104/105 (the companion
+  directory-mode failure above), a Companion ReleaseFast build of
+  `0.7.0+fmx.a7908d127463`, and the consumer suite in a clean worktree of
+  smolmux `main` at `026ea5c` — 229 pass, 3 skip, 0 fail, with the
+  Companion-backed PTY end-to-end file 3/3. Not published, not pinned.
 
 - 2026-08-23: Seeded the workshop from the end of tranche 6 and reconciled
   the fork's branch namespace for the first time. No maintenance cycle has
