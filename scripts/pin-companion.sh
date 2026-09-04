@@ -35,7 +35,7 @@ esac
     exit 64
 }
 
-zmx_checkout="${ZMAX_ZMX_CHECKOUT:-$HOME/src/zmx}"
+zmx_checkout="${ZMAX_ZMX_CHECKOUT:-$HOME/source/neurosnap--zmx}"
 smolmux_checkout="${ZMAX_SMOLMUX_CHECKOUT:-$HOME/code/smolmux}"
 fork_remote="${ZMAX_FORK_REMOTE:-fork}"
 integration_branch=integration

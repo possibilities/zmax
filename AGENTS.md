@@ -30,8 +30,8 @@ the Companion smolmux bundles as `smolmux-zmx`. Read `CONTEXT.md`, `MAINTAIN.md`
   after building that commit and running smolmux's suite against it. It never
   rebases, publishes, or cuts an smolmux release.
 
-The checkout being maintained is `~/src/zmx`, with `fork` pointing to
-`possibilities/zmx` and `origin` pointing to `neurosnap/zmx`. Its
+The checkout being maintained is `~/source/neurosnap--zmx`, with `fork`
+pointing to `possibilities/zmx` and `upstream` pointing to `neurosnap/zmx`. Its
 `integration` branch is the only ref smolmux's pin may name. zmx has no agent
 guidance of its own; smolmux's `AGENTS.md` and `CONTEXT.md` carry the Companion's
 contract and language, and `docs/fork-notes.md` keeps what building the fork
@@ -49,7 +49,7 @@ is open on.
 
 The stack is linear: a feature is a commit, repaired in place during the
 cycle's rebase, never a branch of its own. An offer to upstream is written
-fresh on `fix/<name>` from current `origin/main`, shaped as upstream would
+fresh on `fix/<name>` from current `upstream/main`, shaped as upstream would
 write it, and is not a stack commit moved across — the stack and the offer
 serve different audiences.
 

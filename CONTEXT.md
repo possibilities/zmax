@@ -27,7 +27,7 @@ available on upstream `main` and therefore remains a commit in the stack.
 _Avoid_: permanent patch, downstream fix.
 
 **Offer** — A narrow plank proposed upstream: a `fix/<name>` or `feat/<name>`
-branch cut from current `origin/main`, written as upstream would write it with
+branch cut from current `upstream/main`, written as upstream would write it with
 no smolmux concept in it, pushed to the fork when its pull request opens. An offer
 is evidence of intent, not a dependency: the stack carries the behavior
 whether or not the offer lands, and "landed" is read from upstream `main`,

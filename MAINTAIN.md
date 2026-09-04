@@ -21,7 +21,7 @@ never shadows or depends on a zmx a human may have installed.
 
 ## Upstream
 
-- Bound checkout: `~/src/zmx`. `origin` is `neurosnap/zmx`; `fork` is
+- Bound checkout: `~/source/neurosnap--zmx`. `upstream` is `neurosnap/zmx`; `fork` is
   `possibilities/zmx`. zmx has no `AGENTS.md`; smolmux's (`~/code/smolmux/AGENTS.md`
   and `CONTEXT.md`) name the Companion's contract and the language —
   **Companion**, **Home**, **Companion pin**, **Restore** — and are read before
@@ -43,7 +43,7 @@ never shadows or depends on a zmx a human may have installed.
   (`Hello`/`Welcome`, the restore boundary, `create`, discovery, records, the
   `-Dcompanion` build) is never offered; it is the fork's reason to exist. An
   offer is a `fix/<name>` or `feat/<name>` branch cut from current
-  `origin/main`, written fresh rather than lifted from the stack, adversarially
+  `upstream/main`, written fresh rather than lifted from the stack, adversarially
   reviewed by subagents before it is pushed, pushed to the fork when its pull
   request opens, and tended by `watch-requests`. Independent planks may be
   open together; a plank that builds on another waits for it. Every message
@@ -88,7 +88,7 @@ never shadows or depends on a zmx a human may have installed.
   only ref smolmux's pin may name and never a development branch of its own:
   work lands on it through a rebased candidate.
 - Composition: linear stack. `integration` is one linear series of commits
-  above `origin/main`, rebased as a whole onto current upstream in a scratch
+  above `upstream/main`, rebased as a whole onto current upstream in a scratch
   worktree every cycle, with each commit's subject the marker the inventory
   below refers to. There are no carry branches. A feature is repaired by
   editing its commit in place during the rebase; a new feature is a new commit
