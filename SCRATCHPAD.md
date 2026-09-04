@@ -59,6 +59,11 @@ and its path exercised.
   repair in `f1f7645` and swept-socket record preservation in `6526e5e`.
 - Scrollback: `452f452`, `15327ca`; its early-ending transfer race test is
   made deterministic by `e4064d1`.
+- Swappable PTYs: `6d639c5` on `feat/swappable-ptys` in
+  `~/src/zmx-swappable-ptys`. Built 2026-09-04, gated, and **not yet on
+  `integration`**: it is the next commit for the top of the stack, and fmx's
+  `src/zmx-protocol.ts` mirror of the `Exit` flags byte has to follow before
+  the pin moves.
 - Companion build: `52d25cf`, `b5889fb`, `8a536ca`.
 
 ## Offers
@@ -90,8 +95,31 @@ and its path exercised.
   There are no open pull-request heads or `DELETEME/*` markers.
 - `~/src/zmx` has a gitignored `zig-pkg/` from early tranches; a fresh
   worktree builds from the global Zig cache without it.
+- Two gate steps fail identically on the delivered baseline `2ffb1c1` and on
+  the swappable-PTYs commit, so both are machine or consumer drift rather than
+  fork regressions, and both were verified by building the baseline separately
+  and running the same step against it. `test/companion.bats` "a companion
+  build creates its directory private" fails on the mode of a directory it
+  creates under the test's own tmp dir; the last cycle recorded bats 94/94, so
+  this arrived with something on this machine. fmx's `tests/instance.e2e.test.ts`
+  "an Instance is started, driven, attached to, and stopped entirely over its
+  socket" fails on fmx's own `shown` flag at fmx `main` `20944a1`, which is
+  mid-redesign; the other two tests in that file pass.
+- `~/code/fmx` is dirty with the minimal-multiplexer redesign in progress
+  (another live session). The consumer gate for the swappable-PTYs commit was
+  therefore run in a throwaway worktree of fmx `main` at `20944a1`, not in the
+  bound checkout, and nothing in `~/code/fmx` was touched.
 
 ## History
+
+- 2026-09-04: Built Swappable PTYs as `6d639c5` on `feat/swappable-ptys`
+  after asking the fmx redesign session whether the minimal fmx still needs a
+  child's exact exit status; it does not, and is making `session.exited`'s
+  code and signal nullable. Gated: fmt, Debug build, Zig tests, bats 103/104
+  (the pre-existing companion directory-mode failure above), a Companion
+  ReleaseFast build of `0.7.0+fmx.2ffb1c1e425f`, and fmx's suite against that
+  build in a clean worktree — 215 pass, 3 skip, 0 fail, with the PTY e2e file
+  at 2/3 both for this build and for the baseline. Not published, not pinned.
 
 - 2026-08-23: Seeded the workshop from the end of tranche 6 and reconciled
   the fork's branch namespace for the first time. No maintenance cycle has

@@ -155,9 +155,12 @@ later cycle reconciles only what this section names.
 - Every attach begins with `RestoreBegin`, the whole terminal as it stands,
   and `Ready`; live bytes reach only ready clients. A reconnect replays onto a
   clean screen the same way.
-- The child's exit is exact: `waitpid` is captured, final PTY bytes drain
-  before `Exit`, the record carries code, signal, and reason, a session winds
-  down once, and `zmx attach <cmd>` exits with the child's status.
+- The child's exit is exact wherever the daemon forked the child: `waitpid` is
+  captured, final PTY bytes drain before `Exit`, the record carries code,
+  signal, and reason, a session winds down once, and `zmx attach <cmd>` exits
+  with the child's status. A daemon that adopted its child in a handoff
+  cannot wait for it and says so instead of inventing a status; see
+  Swappable PTYs.
 - `daemonize()` returns on an acknowledged exec rather than a sleep, so a
   first attach in a release build never loses the child's opening output;
   stdio is written as streams.
@@ -184,6 +187,41 @@ later cycle reconciles only what this section names.
 - `--scrollback-lines` and `ZMX_SCROLLBACK_LINES` govern what the shadow
   terminal keeps and a restore replays; history is transferred in chunks, and
   an incomplete transfer fails instead of printing a fragment.
+
+### Swappable PTYs
+
+- `zmx migrate <name> [--to <zmx>]` hands a running session to another zmx
+  binary, defaulting to the one running the command, so a Companion upgrade
+  replaces every daemon without restarting the agents under them. The pty
+  master and the listening socket cross a private 0600 socket by `SCM_RIGHTS`
+  with a manifest — session name and socket path, child pid, creation time,
+  command, shell, labels, cwd, scrollback limit, task state, the final-client
+  policy and whether it is armed, pty bytes not yet written to the child, and
+  the shadow terminal serialized — so the child is never signalled and never
+  learns that the process holding its terminal changed. The listening socket
+  crossing too means a connect during the swap waits in the backlog rather
+  than reading as refused.
+- The exchange runs inline in the daemon's single-threaded loop and is
+  strictly ordered: token, manifest, validation, descriptors, restored,
+  committed. Everything before the commit may fail and leaves the source
+  holding exactly what it held — the importer is killed and reaped, the
+  session carries on, and the client is told why; the terminal is rebuilt and
+  the snapshot replayed before the receiver reports restored. Nothing after
+  the commit is allowed to fail, so the ownership acknowledgement is only
+  logged. A source that hands its session on skips its whole teardown: it
+  signals nothing, writes no exit record, and deletes no socket.
+- Parenthood does not cross. An adopted child is observed by probing its pid
+  after the pty reaches EOF, never by `waitpid`, and `Exit` carries a flags
+  byte whose low bit means the status is unknown — placed so the zero every
+  earlier daemon wrote there still reads as the status it had. An exit record
+  then carries `null` for code and signal rather than a zero that would make a
+  failure look like a success, `zmx attach <cmd>` says the status is unknown
+  and exits 0, and an adopted child already seen to end is not signalled at
+  all, because nothing pins its pid. Sessions can be handed on repeatedly.
+- Known consequence, by choice: a session with `--exit-on-last-client` armed
+  survives a migration with no clients attached, because its clients were
+  dropped by the swap rather than by leaving, and it ends when the next
+  attached terminal disconnects.
 
 ### Companion build
 
@@ -212,7 +250,11 @@ later cycle reconciles only what this section names.
   embedder loop, no in-process Zig consumer — smolmux talks over the socket.
 - The protocol version in `src/ipc.zig` does not move on its own: smolmux's
   `src/zmx-protocol.ts` mirrors its constants and golden bytes, and a bump
-  strands every agent a previous Companion is still holding. smolmux's
+  strands every agent a previous Companion is still holding. A frame that
+  claims a reserved byte without moving the version — the `Exit` flags byte —
+  is mirrored on the same terms: smolmux reads the bytes it always read, so
+  the mirror follows before the pin moves rather than in the same breath.
+  smolmux's
   `AGENTS.md` says what must exist first (a drain or a carry for
   survivors); a stack change that needs a new version waits for that, and
   the two move together in one pin.

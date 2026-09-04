@@ -40,6 +40,27 @@ Things that cost time to discover and are not obvious from the code.
 - **EOF does not prove the child is dead**, only that every slave fd closed.
   In practice it is very hard to separate the two: the session leader keeps the
   controlling terminal, so a child closing its stdio does *not* produce EOF.
+- **A pty master is a file description, and it can be given away.** Passing it
+  and the listening socket over `SCM_RIGHTS` moves the whole session to
+  another process: the child is not signalled, its pid does not change, and
+  the kernel's pty buffer holds whatever it wrote during the swap until the
+  new owner reads it. What does not move is parenthood — `waitpid` on a
+  process you did not fork is `ECHILD`, and zmx's own wrapper maps that to
+  `unreachable`, so an adopted child must never be waited for.
+- **A pid probe is the only question you can ask about an adopted child**, and
+  `kill(pid, 0)` answers "still there", not "still yours". It is asked only
+  after the pty reaches EOF, and the pid could in principle have been reused
+  in between, because nothing pins it any more: the zombie that used to hold
+  the pid and process group belongs to init now.
+- **The session log interleaves at a handoff.** Both daemons hold the same log
+  file with their own offsets — the receiver seeks to the end before the
+  source writes its last line — so the seam can show one truncated entry. Same
+  shape as the fork-time race the log system already comments on; harmless,
+  and it would take `O_APPEND` in `log.zig` to close.
+- **Discovery treats every file in the socket directory as a session**, so a
+  handoff socket cannot live there. It goes in the log directory, named for
+  the source daemon's pid, and macOS's ~104-byte cap on a socket path is why
+  the name is `h-<pid>.sock` and not the session's.
 - **`handleKill` signals the process group** (`kill(-pid, …)`), which is what
   reaps whatever the child backgrounded. Skipping it because the child was
   already reaped leaks those processes.

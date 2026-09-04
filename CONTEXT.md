@@ -46,6 +46,14 @@ branch. Maintenance never creates it from branch age, ownership, request
 state, or namespace, and leaves every other undeclared ref untouched.
 _Avoid_: quarantine branch, stale branch, automatic archive.
 
+**Handoff** — One session moving from the daemon holding it to a freshly
+executed zmx binary: the pty master and listening socket cross a private
+socket, the child is untouched, and the source daemon leaves without its
+teardown. `zmx migrate` asks for one. The child is *adopted* afterwards,
+which is why its exit status stops being knowable.
+_Avoid_: restart, reload, reconnect, reattach (that is what a client does),
+swap (the feature is Swappable PTYs; one act of it is a handoff).
+
 **Maintenance cycle** — One `/maintain` run that reviews upstream movement and
 the offers' fate, rebases the stack onto current upstream, gates the
 candidate, publishes `integration` under a lease, moves smolmux's pin, and updates
