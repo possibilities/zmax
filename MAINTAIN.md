@@ -213,6 +213,14 @@ later cycle reconciles only what this section names.
   the commit is allowed to fail, so the ownership acknowledgement is only
   logged. A source that hands its session on skips its whole teardown: it
   signals nothing, writes no exit record, and deletes no socket.
+- Every wait in the exchange spends one deadline for the whole step, over
+  non-blocking descriptors. Both halves matter: on a blocking socket a single
+  write returns only once the peer has taken every byte, and a per-poll
+  timeout bounds nothing against a peer that reads a byte at a time. Either
+  way a peer that stopped reading would hold the pty, the child and every
+  client for as long as it liked, because the exchange runs inline. A snapshot
+  that cannot be produced whole is not sent, and a session whose manifest
+  exceeds the frame cap is refused with that as the reason.
 - The snapshot is its own serializer, not the one a restore sends. It emits a
   screen's scrollback and visible area as one continuous stream with no clear,
   replays the scrolls a formatter trims along with the blank row a cursor sits
@@ -230,10 +238,14 @@ later cycle reconciles only what this section names.
   failure look like a success, `zmx attach <cmd>` says the status is unknown
   and exits 0, and an adopted child already seen to end is not signalled at
   all, because nothing pins its pid. Sessions can be handed on repeatedly.
-- Known consequence, by choice: a session with `--exit-on-last-client` armed
-  survives a migration with no clients attached, because its clients were
-  dropped by the swap rather than by leaving, and it ends when the next
-  attached terminal disconnects.
+- The final-client policy crosses disarmed. It ends a session when the last
+  attached terminal disconnects, and a daemon that has just received a session
+  has never had one, so arming it from the manifest would assert a client only
+  the previous daemon ever saw. Disarmed, a migrated session sits in exactly
+  the state a created one sits in before its first attach, and the policy arms
+  again on the first Init: the next terminal to attach and leave ends it as
+  asked. Attached clients are dropped by the swap the way a detach drops them,
+  and whether any of them attaches again is theirs to decide.
 
 ### Companion build
 
