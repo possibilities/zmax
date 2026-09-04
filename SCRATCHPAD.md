@@ -59,11 +59,12 @@ and its path exercised.
   repair in `f1f7645` and swept-socket record preservation in `6526e5e`.
 - Scrollback: `452f452`, `15327ca`; its early-ending transfer race test is
   made deterministic by `e4064d1`.
-- Swappable PTYs: `a26f4bf` on `feat/swappable-ptys` in
-  `~/src/zmx-swappable-ptys`. Built 2026-09-04, gated, and **not yet on
-  `integration`**: it is the next commit for the top of the stack, and smolmux's
-  `src/zmx-protocol.ts` mirror of the `Exit` flags byte has to follow before
-  the pin moves.
+- Swappable PTYs: `a26f4bf` on `feat/swappable-ptys`, a branch in the bound
+  checkout; the worktree it was built in has been removed, so the commit is
+  reachable wherever that checkout lives. Built 2026-09-04, gated, and **not
+  yet on `integration`**: it is the next commit for the top of the stack, and
+  smolmux's `src/zmx-protocol.ts` mirror of the `Exit` flags byte has to
+  follow before the pin moves.
 - Companion build: `52d25cf`, `b5889fb`, `8a536ca`.
 
 ## Offers
