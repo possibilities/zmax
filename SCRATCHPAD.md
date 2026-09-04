@@ -113,20 +113,24 @@ and its path exercised.
   (zmx `attach` writes the clear itself, fmx prepends RIS), which is the
   argument that the internal clear is now redundant for them; a consumer that
   does neither is the case to check before moving.
-- Two gate steps fail identically on the delivered baseline `2ffb1c1` and on
-  the swappable-PTYs commit, so both are machine or consumer drift rather than
-  fork regressions, and both were verified by building the baseline separately
-  and running the same step against it. `test/companion.bats` "a companion
-  build creates its directory private" fails on the mode of a directory it
-  creates under the test's own tmp dir; the last cycle recorded bats 94/94, so
-  this arrived with something on this machine. fmx's `tests/instance.e2e.test.ts`
-  "an Instance is started, driven, attached to, and stopped entirely over its
-  socket" fails on fmx's own `shown` flag at fmx `main` `20944a1`, which is
-  mid-redesign; the other two tests in that file pass.
-- `~/code/fmx` is dirty with the minimal-multiplexer redesign in progress
-  (another live session). The consumer gate for the swappable-PTYs commit was
-  therefore run in a throwaway worktree of fmx `main` at `20944a1`, not in the
-  bound checkout, and nothing in `~/code/fmx` was touched.
+- One gate step fails on the delivered baseline `2ffb1c1` and on the
+  swappable-PTYs commit alike, so it is machine drift rather than a fork
+  regression, verified by building the baseline separately and running the
+  same step against it: `test/companion.bats` "a companion build creates its
+  directory private" fails on the mode of a directory it creates under the
+  test's own tmp dir. The last cycle recorded bats 94/94, so this arrived with
+  something on this machine, not with the fork.
+- The consumer is being renamed from fmx to smolmux by another live session,
+  which owns that sweep across this repository including
+  `scripts/pin-companion.sh`, whose default checkout path is the one hard
+  coupling rather than prose. This branch predates the sweep and rebases onto
+  it. Two deliberate non-changes it will leave alone, both fork concerns for a
+  later stack commit rather than rename work: the Companion build string stays
+  `<version>+fmx.<commit>`, because `build.zig` refuses a version naming fmx
+  without `-Dcompanion` and moving the marker without moving the guard would
+  silently disarm it; and the `-Dcompanion` directory default stays
+  `/tmp/fmx-<uid>/zmx`, which this file's Features section names as carried
+  behaviour, so changing it is an inventory change with a gate.
 
 ## History
 
@@ -136,13 +140,19 @@ and its path exercised.
   code and signal nullable. Gated: fmt, Debug build, Zig tests, bats 103/104
   (the pre-existing companion directory-mode failure above), a Companion
   ReleaseFast build of `0.7.0+fmx.2ffb1c1e425f`, and fmx's suite against that
-  build in a clean worktree — 215 pass, 3 skip, 0 fail, with the PTY e2e file
-  at 2/3 both for this build and for the baseline. Not published, not pinned.
-  Testing under load then found the handoff losing a screenful and sometimes a
-  single line at the seam, both traced to the restore serializer's clear and
-  to a formatter trimming trailing blank rows; fixed by a handoff-specific
-  serializer, guarded by three round-trip unit tests and an end-to-end one,
-  and the commit was amended to `b5c14ab`.
+  build. Testing under load then found the handoff losing a screenful, and
+  sometimes a single line, at the seam: the first traced to the restore
+  serializer's clear and the second to a formatter saying nothing about the
+  blank row a cursor sits on, which left the replay one scroll behind so the
+  child's next line overwrote the last one it should have kept. Both are fixed
+  by a handoff-specific serializer, guarded by three round-trip unit tests and
+  an end-to-end one, and the commit was amended to `b5c14ab`. The gate was
+  then re-run in full against that exact commit: fmt, Debug build, Zig tests,
+  bats 104/105 (the companion directory-mode failure above), a Companion
+  ReleaseFast build of `0.7.0+fmx.b5c14ab4ecda`, and the consumer suite in a
+  clean worktree of smolmux `main` at `a7755e3` — 229 pass, 3 skip, 0 fail,
+  and the Companion-backed PTY end-to-end file 3/3. Not published, not
+  pinned.
 
 - 2026-08-23: Seeded the workshop from the end of tranche 6 and reconciled
   the fork's branch namespace for the first time. No maintenance cycle has
