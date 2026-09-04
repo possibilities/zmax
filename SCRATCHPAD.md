@@ -70,9 +70,9 @@ and its path exercised.
   [#247](https://github.com/neurosnap/zmx/issues/247)
   (`poc/attach-exit-status` → `53407fe`). Both are open with no comments as
   of 2026-08-29, and upstream `fb1b6b6` contains neither replacement. Local
-  `fix/*` branches of the same commits exist in `~/src/zmx` and are not
-  published. `fix/daemon-dev-tty` is specified, not cut. #127 remains open;
-  there has been no maintainer response since our 2026-08-22 comment.
+  `fix/*` branches of the same commits exist in `~/source/neurosnap--zmx` and
+  are not published. `fix/daemon-dev-tty` is specified, not cut. #127 remains
+  open; there has been no maintainer response since our 2026-08-22 comment.
 
 ## Current notes
 
@@ -88,8 +88,8 @@ and its path exercised.
   `2ffb1c1`. It preserves `push-onwykpqrsxty` at `c5072cf`,
   `push-rzzukqmnkpss` at `d5fa1ea`, and `push-vtznxtxsltwy` at `a67197e`.
   There are no open pull-request heads or `DELETEME/*` markers.
-- `~/src/zmx` has a gitignored `zig-pkg/` from early tranches; a fresh
-  worktree builds from the global Zig cache without it.
+- The former clone's gitignored `zig-pkg/` was disposable build residue; the
+  new Clone builds from the global Zig cache without it.
 
 ## History
 
