@@ -59,7 +59,7 @@ and its path exercised.
   repair in `f1f7645` and swept-socket record preservation in `6526e5e`.
 - Scrollback: `452f452`, `15327ca`; its early-ending transfer race test is
   made deterministic by `e4064d1`.
-- Swappable PTYs: `fb0cd7a` on `feat/swappable-ptys` in
+- Swappable PTYs: `a26f4bf` on `feat/swappable-ptys` in
   `~/src/zmx-swappable-ptys`. Built 2026-09-04, gated, and **not yet on
   `integration`**: it is the next commit for the top of the stack, and smolmux's
   `src/zmx-protocol.ts` mirror of the `Exit` flags byte has to follow before
@@ -95,6 +95,13 @@ and its path exercised.
   There are no open pull-request heads or `DELETEME/*` markers.
 - `~/src/zmx` has a gitignored `zig-pkg/` from early tranches; a fresh
   worktree builds from the global Zig cache without it.
+- Second defect in Restore, found by the same review and also not fixed here:
+  `util.serializeTerminalState` clears `synchronized_output` on the live
+  terminal and restores it only on the success path, so either of its two
+  early returns leaves the mode cleared for the rest of the session. The
+  handoff serializer does the same thing correctly with a `defer`, which is
+  the one-line shape of the fix. It predates this work and sits in the Restore
+  commit, not this one.
 - Known defect in Restore, measured but not fixed: `serializeTerminalState`
   clears the visible screen between the scrollback and the active screen, so
   every restore drops exactly one screenful — and not the oldest part, but the
@@ -104,7 +111,7 @@ and its path exercised.
   lost L162–L166. It compounds: a Session that has reattached several times
   has several holes, and smolmux's new `session.capture` scrollback bound reads
   the emulator that replay populates. The handoff path no longer has it —
-  `util.serializeTerminalForHandoff` in `fb0cd7a` round-trips losslessly and
+  `util.serializeTerminalForHandoff` in `a26f4bf` round-trips losslessly and
   is unit-tested for it — and the same serializer is the candidate fix for
   restore. It was scoped to handoffs deliberately: the clear was upstream's
   fix for issue #31, restore is a carried feature smolmux depends on for every
@@ -128,7 +135,7 @@ and its path exercised.
 
 ## History
 
-- 2026-09-04: Built Swappable PTYs as `fb0cd7a` on `feat/swappable-ptys`
+- 2026-09-04: Built Swappable PTYs as `a26f4bf` on `feat/swappable-ptys`
   after asking the smolmux redesign session whether the minimal consumer still
   needs a
   child's exact exit status; it does not, and is making `session.exited`'s
@@ -143,9 +150,9 @@ and its path exercised.
   All three are fixed by a handoff-specific serializer that also carries the
   primary screen a restore never sends, guarded by four round-trip unit tests
   and an end-to-end one. The gate then ran in full against the final commit
-  `fb0cd7a`: fmt, Debug build, Zig tests, bats 105/106 (the companion
+  `a26f4bf`: fmt, Debug build, Zig tests, bats 105/106 (the companion
   directory-mode failure above), a Companion ReleaseFast build of
-  `0.7.0+fmx.fb0cd7a2ec99`, and the consumer suite in a clean worktree of
+  `0.7.0+fmx.a26f4bf2d440`, and the consumer suite in a clean worktree of
   smolmux `main` at `8868db9` — 229 pass, 3 skip, 0 fail, with the
   Companion-backed PTY end-to-end file 3/3. Not published, not pinned.
 - 2026-09-04, adversarial review of the same commit by a subagent (Opus, high
@@ -171,9 +178,15 @@ and its path exercised.
   Two findings were accepted rather than fixed and are recorded above as what
   they are: `list --json` and `inspect --json` can now carry a null exit
   status, which is the intended contract change the consumer is following; and
-  the pid probe for an adopted child can in principle signal a recycled
-  process group, which is inherent to a session outliving the process that
-  forked it and is named in the fork notes. One foot-gun is left as it is: the
+  an adopted child's end is reported without a status, which is inherent to a
+  session outliving the process that forked it and is named in the fork notes.
+  The review then separated a ruling that had been made against the wrong
+  thing: reporting an imprecise status is cosmetic and stays inside the
+  session, but signalling a process group on a pid nothing pins leaves it and
+  can reach a stranger. Teardown now asks whether the adopted child is still
+  there before it signals rather than after, so the guard written for that
+  case can fire; `kill` on a migrated session still reaps its child, which a
+  test holds. One foot-gun is left as it is: the
   manifest version is an equality check, so the first bump makes running
   sessions unmigratable to the build that bumped it. It fails safely and
   loudly, and a compatibility window is a decision, not an oversight.
