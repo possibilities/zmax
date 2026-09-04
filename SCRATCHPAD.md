@@ -59,7 +59,7 @@ and its path exercised.
   repair in `f1f7645` and swept-socket record preservation in `6526e5e`.
 - Scrollback: `452f452`, `15327ca`; its early-ending transfer race test is
   made deterministic by `e4064d1`.
-- Swappable PTYs: `6d639c5` on `feat/swappable-ptys` in
+- Swappable PTYs: `b5c14ab` on `feat/swappable-ptys` in
   `~/src/zmx-swappable-ptys`. Built 2026-09-04, gated, and **not yet on
   `integration`**: it is the next commit for the top of the stack, and fmx's
   `src/zmx-protocol.ts` mirror of the `Exit` flags byte has to follow before
@@ -95,6 +95,24 @@ and its path exercised.
   There are no open pull-request heads or `DELETEME/*` markers.
 - `~/src/zmx` has a gitignored `zig-pkg/` from early tranches; a fresh
   worktree builds from the global Zig cache without it.
+- Known defect in Restore, measured but not fixed: `serializeTerminalState`
+  clears the visible screen between the scrollback and the active screen, so
+  every restore drops exactly one screenful — and not the oldest part, but the
+  screenful immediately above the viewport, which is the run a reader most
+  wants. The fmx redesign session measured it against a Companion at the
+  current pin: 5 rows lost L192–L196 of 200, 10 rows lost L182–L186, 20 rows
+  lost L162–L166. It compounds: a Session that has reattached several times
+  has several holes, and fmx's new `session.capture` scrollback bound reads
+  the emulator that replay populates. The handoff path no longer has it —
+  `util.serializeTerminalForHandoff` in `b5c14ab` round-trips losslessly and
+  is unit-tested for it — and the same serializer is the candidate fix for
+  restore. It was scoped to handoffs deliberately: the clear was upstream's
+  fix for issue #31, restore is a carried feature fmx depends on for every
+  attach, and changing what every client receives is its own decision with its
+  own gate. Both consumers clear the terminal before the restore bytes arrive
+  (zmx `attach` writes the clear itself, fmx prepends RIS), which is the
+  argument that the internal clear is now redundant for them; a consumer that
+  does neither is the case to check before moving.
 - Two gate steps fail identically on the delivered baseline `2ffb1c1` and on
   the swappable-PTYs commit, so both are machine or consumer drift rather than
   fork regressions, and both were verified by building the baseline separately
@@ -120,6 +138,11 @@ and its path exercised.
   ReleaseFast build of `0.7.0+fmx.2ffb1c1e425f`, and fmx's suite against that
   build in a clean worktree — 215 pass, 3 skip, 0 fail, with the PTY e2e file
   at 2/3 both for this build and for the baseline. Not published, not pinned.
+  Testing under load then found the handoff losing a screenful and sometimes a
+  single line at the seam, both traced to the restore serializer's clear and
+  to a formatter trimming trailing blank rows; fixed by a handoff-specific
+  serializer, guarded by three round-trip unit tests and an end-to-end one,
+  and the commit was amended to `b5c14ab`.
 
 - 2026-08-23: Seeded the workshop from the end of tranche 6 and reconciled
   the fork's branch namespace for the first time. No maintenance cycle has

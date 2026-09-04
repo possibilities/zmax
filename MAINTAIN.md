@@ -152,9 +152,12 @@ later cycle reconciles only what this section names.
 
 ### Restore and exit
 
-- Every attach begins with `RestoreBegin`, the whole terminal as it stands,
-  and `Ready`; live bytes reach only ready clients. A reconnect replays onto a
-  clean screen the same way.
+- Every attach begins with `RestoreBegin`, the terminal as it stands, and
+  `Ready`; live bytes reach only ready clients. A reconnect replays onto a
+  clean screen the same way. What a restore sends is the scrollback, a clear,
+  and then the visible screen — and the clear costs the one screenful that had
+  scrolled into view, which the scratchpad records as a measured defect with
+  its candidate fix. A handoff does not share it: see Swappable PTYs.
 - The child's exit is exact wherever the daemon forked the child: `waitpid` is
   captured, final PTY bytes drain before `Exit`, the record carries code,
   signal, and reason, a session winds down once, and `zmx attach <cmd>` exits
