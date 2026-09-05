@@ -5,20 +5,26 @@ entries on every maintenance cycle and appends one compact history entry.
 
 ## Delivered baseline
 
-- Last completed maintenance: 2026-08-29.
+- Last completed maintenance audit: 2026-08-29.
+- Last review/repair delivery: 2026-09-04.
 - Upstream base: `fb1b6b66476fc83c1453b0cde8fe2a50166eb395`
   (`neurosnap/zmx:main`, "fix(docs): remove stale list --where references
-  (#250)").
-- Published integration: `2ffb1c1e425f56a996577d344f24417f8dd6d603`, 25
+  (#250)"). This delivery repairs the existing stack without rebasing it.
+- Published integration: `2be662da7716607fcacfe4e55c26f7ba4146c3d5`, 26
   commits above the base, with protocol version 1 unchanged.
-- Companion pin in smolmux: commit `2ffb1c1e425f`, build
-  `0.7.0+fmx.2ffb1c1e425f`, moved by `scripts/pin-companion.sh` in smolmux commit
-  `89a4041a962c35f763d132a49452c238af904e2d`. The editable smolmux Companion was
-  refreshed to the same build. This pin on smolmux main is not itself a release.
-- Gate as last run: formatting, Debug build, Zig tests, bats 94/94, and the
-  Companion ReleaseFast build passed; macOS and Linux compile checks also
-  passed. Clean smolmux main passed typecheck, 342 tests with one expected skip,
-  and the Companion-backed PTY test 1/1 against that exact build.
+- Companion pin in smolmux: commit `2be662da7716`, build
+  `0.7.0+fmx.2be662da7716`, moved by `scripts/pin-companion.sh` in smolmux commit
+  `51e24b7a979ac8dfe8a3fec928b1c714fcd73a7a`. The editable smolmux Companion was
+  refreshed to the same build. Smolmux is version 0.6.3; agentmux is 0.27.3.
+- Gate for the exact candidate: formatting, Debug build, Zig tests, Bats
+  96/96, Companion ReleaseFast build, smolmux 269 unit tests and all three
+  Companion-backed PTY tests passed on Mac arm64. The consumer repeated
+  typecheck, unit and PTY gates before committing the pin. Agentmux's final
+  integration passed 9/9 scenarios and 121 assertions against this build.
+- The workshop's transactional pin tests passed, including concurrent edits,
+  concurrent commits, failed commit cleanup, failed gates and the current
+  PTY test target. Independent adversarial review reported no remaining
+  concrete findings in the repaired paths.
 
 ## Audited-upstream frontier
 
@@ -50,9 +56,13 @@ and its path exercised.
 
 - Portable wire: `e0da029`, `5c07655`, `bf2cc50`.
 - Negotiated clients: `a094f6c`, `9e33017`, `079e9f5`.
+- Client boundaries: `2be662d` (malformed controls, native size and queue
+  budgets, Write quoting, explicit input failure and atomic acknowledgement).
 - Multi-client terminal ownership and opt-in final-client lifecycle:
-  `906fa49`, with mouse-motion and focus-gain ownership in `2ffb1c1`.
-- Restore and exit: `31d37d1`, `fdd778b`, `551518a`, `af4cfa2`, `f295b3a`.
+  `906fa49`, with mouse-motion and focus-gain ownership in `2ffb1c1`; failed
+  Restore cannot arm lifecycle or resize the PTY in `2be662d`.
+- Restore and exit: `31d37d1`, `fdd778b`, `551518a`, `af4cfa2`, `f295b3a`;
+  complete-queue attachment and serialization failure cleanup in `2be662d`.
 - Create: `afdf25b`, with cross-feature review repairs in `f1f7645` and
   `dab954b`, and creator-environment handling in `6526e5e`.
 - Discovery and records: `241efd3`, `43e4e1b`, with the relevant review
@@ -76,6 +86,15 @@ and its path exercised.
 
 ## Current notes
 
+- The 2026-09-04 review captured upstream `793b837500c7215cf51297ec4d51e2a174d365ee`
+  but did not audit its delta or rebase onto it. The bound local `main` was
+  already there; the fork mirror remains at `fb1b6b6`. This repair published
+  only Integration under its original `2ffb1c1` lease and preserved the three
+  `push-*` heads. The audited frontier remains `fb1b6b6`.
+- Existing Sessions retain their original daemon executable until restarted.
+  Installation changes new Sessions without disrupting the operator's live
+  work. Per-connection bounds do not constitute an aggregate Session quota.
+
 - `fdd778b` now observes child status with `waitid(P_PID, WEXITED | WNOHANG |
   WNOWAIT)` and leaves the zombie to pin its PID and process group until the
   teardown's single `waitpid`; the prior PID-reuse signalling note is
@@ -84,7 +103,8 @@ and its path exercised.
 - Upstream removed stock zmx's stale `list --where` documentation at
   `fb1b6b6`; the fork's real `--where` implementation, README help, and fish
   completion remain together in `241efd3`.
-- Final reconciliation has `main` at `fb1b6b6` and `integration` at
+- The last full maintenance reconciliation (2026-08-29) had `main` at
+  `fb1b6b6` and `integration` at
   `2ffb1c1`. It preserves `push-onwykpqrsxty` at `c5072cf`,
   `push-rzzukqmnkpss` at `d5fa1ea`, and `push-vtznxtxsltwy` at `a67197e`.
   There are no open pull-request heads or `DELETEME/*` markers.
@@ -122,6 +142,14 @@ and its path exercised.
   Dispositions were retire 0, repair 1 (Discovery and records, already repaired
   in `241efd3`), unchanged 7; the frontier advanced to `fb1b6b6` without a
   product republish or gate.
+
+- 2026-09-04: Adversarially reviewed the delivered stack and added client
+  boundary and failed-Restore safeguards as `2be662d`; all native, CLI and
+  consumer gates passed. Published under the original `2ffb1c1` lease and
+  moved the consumer to `0.7.0+fmx.2be662da7716` in `51e24b7`. The pin script now
+  uses the consumer's shared builder, runs `instance.e2e.test.ts`, and preserves
+  concurrent edits/commits on rollback. Existing upstream accommodations and
+  stance are unchanged; this was not an upstream audit, so no frontier moved.
 
 ## The consumer is called smolmux; two fork names deliberately are not
 

@@ -4,6 +4,7 @@
 # without Zig. Set FAKE_ZIG_FAIL=1 to fail the build, FAKE_ZIG_REPORT to make
 # the binary misreport its build.
 set -euo pipefail
+if [ "${1:-}" = version ]; then printf '0.16.0\n'; exit 0; fi
 version=
 prefix=
 for argument in "$@"; do

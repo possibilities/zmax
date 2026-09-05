@@ -111,50 +111,77 @@ git -C "$smolmux_checkout" pull --quiet --ff-only "$smolmux_remote" "$smolmux_br
     || die "could not fast-forward $smolmux_checkout to $smolmux_remote/$smolmux_branch"
 
 work_dir=$(mktemp -d "${TMPDIR:-/tmp}/zmax-pin.XXXXXX")
-build_worktree="$work_dir/zmx"
+previous_pin="$work_dir/companion.json.before"
+candidate_pin="$work_dir/companion.json.candidate"
+starting_head=$(git -C "$smolmux_checkout" rev-parse HEAD)
+pin_written=0
+pin_committed=0
+cp "$pin_file" "$previous_pin"
+restore_pin() {
+    [ "$pin_written" -eq 1 ] && [ "$pin_committed" -eq 0 ] || return 0
+    if [ "$(git -C "$smolmux_checkout" rev-parse HEAD)" != "$starting_head" ] ||
+        [ "$(git -C "$smolmux_checkout" branch --show-current)" != "$smolmux_branch" ]; then
+        printf 'zmax pin: smolmux HEAD or branch moved; retaining its pin and index\n' >&2
+        return 0
+    fi
+    # Restore only our own bytes; concurrent edits belong to their author.
+    if cmp -s "$pin_file" "$candidate_pin"; then
+        cp "$previous_pin" "$pin_file"
+    else
+        printf 'zmax pin: companion.json changed during the gate; retaining those edits\n' >&2
+    fi
+    if [ "$(git -C "$smolmux_checkout" rev-parse HEAD)" = "$starting_head" ] &&
+        git -C "$smolmux_checkout" show :companion.json >"$work_dir/staged-pin" &&
+        cmp -s "$work_dir/staged-pin" "$candidate_pin"; then
+        git -C "$smolmux_checkout" restore --source="$starting_head" --staged -- companion.json
+    fi
+}
 cleanup() {
     local status=$?
     trap - EXIT
-    if [ -d "$build_worktree" ]; then
-        git -C "$zmx_checkout" worktree remove --force "$build_worktree" >/dev/null 2>&1 || true
-    fi
+    restore_pin
     rm -rf -- "$work_dir"
     exit "$status"
 }
 trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
-# Build the published commit itself, detached, never the bound checkout.
-git -C "$zmx_checkout" worktree add --quiet --detach "$build_worktree" "$commit" \
-    || die "could not check out $commit for the build"
-(cd "$build_worktree" && zig build -Dcompanion -Doptimize=ReleaseFast \
-    -Dversion="$build" --prefix "$work_dir/companion") \
+# The pin is provisional until the shared consumer builder and gates pass.
+# This keeps one source checkout, version check, and set of build flags.
+printf '{\n  "repository": "%s",\n  "branch": "%s",\n  "commit": "%s",\n  "build": "%s"\n}\n' \
+    "$repository" "$integration_branch" "$commit" "$build" >"$candidate_pin"
+cp "$candidate_pin" "$pin_file"
+pin_written=1
+companion="$work_dir/smolmux-zmx"
+SMOLMUX_COMPANION_CHECKOUT="$zmx_checkout" \
+    "$smolmux_checkout/scripts/build-companion.sh" --output "$companion" \
     || die "the Companion did not build at $commit"
-companion="$work_dir/companion/bin/zmx"
 reported=$(ZMX_DIR="$work_dir/zmx-dir" "$companion" version 2>/dev/null | awk 'NR == 1 && $1 == "zmx" { print $2 }')
 [ "$reported" = "$build" ] || die "the Companion reports '$reported', not $build"
 
-# Write the pin, then prove smolmux against the build it names; revert on failure.
-previous_pin="$work_dir/companion.json.before"
-cp "$pin_file" "$previous_pin"
-restore_pin() {
-    cp "$previous_pin" "$pin_file"
-}
-printf '{\n  "repository": "%s",\n  "branch": "%s",\n  "commit": "%s",\n  "build": "%s"\n}\n' \
-    "$repository" "$integration_branch" "$commit" "$build" >"$pin_file"
-
 if [ "$skip_tests" -ne 1 ]; then
-    (cd "$smolmux_checkout" && bun run typecheck) || { restore_pin; die "smolmux typecheck failed against the new pin"; }
+    (cd "$smolmux_checkout" && bun run typecheck) || { die "smolmux typecheck failed against the new pin"; }
     (cd "$smolmux_checkout" && SMOLMUX_ZMX_PATH="$companion" bun test) \
-        || { restore_pin; die "smolmux tests failed against Companion $build"; }
-    (cd "$smolmux_checkout" && SMOLMUX_ZMX_PATH="$companion" SMOLMUX_RUN_PTY_TESTS=1 bun test tests/multiplexer.e2e.test.ts) \
-        || { restore_pin; die "smolmux e2e failed against Companion $build"; }
+        || { die "smolmux tests failed against Companion $build"; }
+    (cd "$smolmux_checkout" && SMOLMUX_ZMX_PATH="$companion" SMOLMUX_RUN_PTY_TESTS=1 bun test tests/instance.e2e.test.ts) \
+        || { die "smolmux e2e failed against Companion $build"; }
 fi
+
+[ "$(git -C "$smolmux_checkout" rev-parse HEAD)" = "$starting_head" ] \
+    || die "smolmux HEAD changed during the gate; leaving the new work intact"
+[ "$(git -C "$smolmux_checkout" branch --show-current)" = "$smolmux_branch" ] \
+    || die "smolmux branch changed during the gate"
+cmp -s "$pin_file" "$candidate_pin" || die "companion.json changed during the gate"
+[ "$(git -C "$smolmux_checkout" status --porcelain)" = " M companion.json" ] \
+    || die "smolmux changed during the gate; commit the pin after reviewing those changes"
 
 git -C "$smolmux_checkout" add companion.json
 git -C "$smolmux_checkout" commit --quiet -m "Pin the Companion to zmx ${commit:0:12}
 
 smolmux-zmx is built from possibilities/zmx integration at $commit and reports
-$build." || { restore_pin; die "could not commit the pin"; }
+$build." || { die "could not commit the pin"; }
+pin_committed=1
 git -C "$smolmux_checkout" push --quiet "$smolmux_remote" "$smolmux_branch" \
     || die "the pin is committed locally but could not be pushed; push $smolmux_checkout $smolmux_branch by hand"
 

@@ -24,7 +24,7 @@ zmx_fork="$test_root/zmx-fork.git"
 git init --quiet --initial-branch=main "$zmx"
 git -C "$zmx" config user.name zmax-test
 git -C "$zmx" config user.email zmax@example.invalid
-printf '.{\n    .name = .zmx,\n    .version = "0.7.0",\n}\n' >"$zmx/build.zig.zon"
+printf '.{\n    .name = .zmx,\n    .version = "0.7.0",\n    .minimum_zig_version = "0.16.0",\n}\n' >"$zmx/build.zig.zon"
 git -C "$zmx" add build.zig.zon
 git -C "$zmx" commit --quiet -m upstream
 git -C "$zmx" switch --quiet -c integration
@@ -45,7 +45,12 @@ git -C "$smolmux" config user.email zmax@example.invalid
 old_sha=$(git -C "$zmx" rev-parse main)
 printf '{\n  "repository": "https://github.com/possibilities/zmx.git",\n  "branch": "integration",\n  "commit": "%s",\n  "build": "0.7.0+fmx.%s"\n}\n' \
     "$old_sha" "${old_sha:0:12}" >"$smolmux/companion.json"
-git -C "$smolmux" add companion.json
+mkdir -p "$smolmux/scripts" "$smolmux/tests"
+consumer_builder="${ZMAX_TEST_BUILD_COMPANION:-$HOME/code/smolmux/scripts/build-companion.sh}"
+[ -x "$consumer_builder" ] || fail "shared consumer builder not found: $consumer_builder"
+cp "$consumer_builder" "$smolmux/scripts/build-companion.sh"
+touch "$smolmux/tests/instance.e2e.test.ts"
+git -C "$smolmux" add companion.json scripts tests
 git -C "$smolmux" commit --quiet -m pin
 git init --quiet --bare "$smolmux_origin"
 git -C "$smolmux" remote add origin "$smolmux_origin"
@@ -131,8 +136,63 @@ printf '%s\n' "$gate_failure_output" | grep -F 'smolmux typecheck failed against
 [ -z "$(git -C "$smolmux" status --porcelain)" ] || fail "a failed smolmux gate left smolmux dirty"
 rm "$fake_bin/bun"
 
+# Failure after a concurrent pin edit must preserve the other writer's bytes.
+cat >"$fake_bin/bun" <<'BUN'
+#!/bin/bash
+printf 'concurrent pin edit\n' > companion.json
+exit 1
+BUN
+chmod +x "$fake_bin/bun"
+if run_pin_with_tests --apply >"$test_root/concurrent.log" 2>&1; then
+    fail "accepted a concurrently edited pin"
+fi
+[ "$(cat "$smolmux/companion.json")" = 'concurrent pin edit' ] \
+    || fail "rollback overwrote another writer's pin"
+git -C "$smolmux" restore --worktree -- companion.json
+rm "$fake_bin/bun"
+
+# Another session committing the provisional pin owns that new HEAD. Rollback
+# must not leave a dirty reversal of its committed file.
+fixture_head=$(git -C "$smolmux" rev-parse HEAD)
+cat >"$fake_bin/bun" <<'BUN'
+#!/bin/bash
+set -e
+git add companion.json
+git commit --quiet -m 'concurrent pin commit'
+exit 1
+BUN
+chmod +x "$fake_bin/bun"
+if run_pin_with_tests --apply >"$test_root/concurrent-commit.log" 2>&1; then
+    fail "accepted a concurrently committed pin"
+fi
+[ -z "$(git -C "$smolmux" status --porcelain)" ] || fail "rollback reversed a concurrent commit"
+[ "$(git -C "$smolmux" rev-parse HEAD)" != "$fixture_head" ] || fail "fixture did not move HEAD"
+git -C "$smolmux" reset --quiet --hard "$fixture_head"
+rm "$fake_bin/bun"
+
+# A rejected commit restores both the provisional file and our staged change.
+printf '#!/bin/sh\nexit 1\n' >"$smolmux/.git/hooks/pre-commit"
+chmod +x "$smolmux/.git/hooks/pre-commit"
+if run_pin --apply >"$test_root/commit-failure.log" 2>&1; then
+    fail "accepted a rejected pin commit"
+fi
+[ -z "$(git -C "$smolmux" status --porcelain)" ] || fail "commit failure left the pin staged or dirty"
+rm "$smolmux/.git/hooks/pre-commit"
+
+# Prove the success path actually asks for the current PTY test target.
+cat >"$fake_bin/bun" <<'BUN'
+#!/bin/bash
+set -eu
+printf '%s\n' "$*" >>"$BUN_TEST_RECEIPT"
+if [ "$1" = test ] && [ "$#" -gt 1 ]; then
+    [ "$2" = tests/instance.e2e.test.ts ] && [ -f "$2" ] || exit 1
+fi
+BUN
+chmod +x "$fake_bin/bun"
 # The real thing: pin written, committed on main, pushed.
-run_pin --apply >/dev/null
+BUN_TEST_RECEIPT="$test_root/bun-receipt" run_pin_with_tests --apply >/dev/null
+grep -Fx 'test tests/instance.e2e.test.ts' "$test_root/bun-receipt" >/dev/null \
+    || fail "success skipped the PTY gate"
 grep -F "\"commit\": \"$integration_sha\"" "$smolmux/companion.json" >/dev/null \
     || fail "the pin was not moved"
 grep -F "\"build\": \"$expected_build\"" "$smolmux/companion.json" >/dev/null \

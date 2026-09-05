@@ -121,3 +121,26 @@ does, so nothing upstream had to change with it.
   queue in `src/zmx-client.ts` handles that and waits for `drain`.
 - `Bun.connect`'s `open` handler must not return a value (its type is `void`).
 - smolmux's tsconfig `include` did not cover `scripts/`; it does now.
+
+
+## Adversarial boundary review (2026-09-04)
+
+Malformed or oversized requests now fail their peer rather than the daemon
+loop. This boundary includes Init/Resize cell budgets, History format bytes,
+Write path lengths, literal destination quoting, output queue capacity, and
+PTY input capacity. Run and Write roll back their queued bytes when they
+cannot queue their acknowledgement; a caller whose connection closes still
+cannot infer whether already-flushed commands ran.
+
+Restore is an attach transaction: no Ready after a serialization failure,
+no sizing or terminal membership before the complete queue succeeds, and no
+arming `--exit-on-last-client` on a failed first Restore. Serialization errors
+must restore transient terminal modes through `defer`. Optional-return
+helpers need ordinary `defer` cleanup, because returning null does not invoke
+`errdefer`.
+
+The consumer uses `scripts/build-companion.sh` for its provisional pin, then
+runs `tests/instance.e2e.test.ts`. The former multiplexer test path no longer
+exists. Failure restores only the pin bytes written by the transaction;
+concurrent edits remain available for review. This review adds safeguards to
+the existing protocol version 1 and does not audit newer upstream commits.

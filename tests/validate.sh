@@ -63,12 +63,12 @@ printf '%s\n' "$missing_skill_output" | grep -F 'the maintain skill is not insta
 
 # The pin script is a consumer, never a maintainer: it builds the published
 # commit detached, proves the build, and moves nothing but the pin.
-grep -F 'worktree add --quiet --detach' scripts/pin-companion.sh >/dev/null \
-    || fail "pin script does not build the published commit detached"
+grep -F 'scripts/build-companion.sh" --output' scripts/pin-companion.sh >/dev/null \
+    || fail "pin script does not use the shared consumer builder"
 grep -F 'is not the published' scripts/pin-companion.sh >/dev/null \
     || fail "pin script does not refuse an unpublished integration"
-grep -F -- '-Dcompanion -Doptimize=ReleaseFast' scripts/pin-companion.sh >/dev/null \
-    || fail "pin script does not build the Companion the way a release does"
+grep -F 'tests/instance.e2e.test.ts' scripts/pin-companion.sh >/dev/null \
+    || fail "pin script does not run the current PTY suite"
 if grep -E 'git .*(rebase|push .*(force|lease))' scripts/pin-companion.sh >/dev/null; then
     fail "pin script contains maintenance behavior"
 fi

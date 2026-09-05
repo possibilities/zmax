@@ -137,6 +137,20 @@ later cycle reconciles only what this section names.
   client's bytes act on nothing. An oversized frame, a late `Hello`, and a
   silent handshake are survived.
 
+### Client boundaries
+
+- Malformed control requests close only their requesting peer; they never
+  tear down the Session. Terminal dimensions are nonzero, at most 4096 per
+  axis and 262144 cells. History formats and Write lengths are validated.
+- A client's output queue is capped at 64 MiB. Overflow releases the queue
+  and closes that peer. PTY input is capped at 16 MiB; refusal is explicit,
+  and Run/Write queue their entire command plus acknowledgement or neither.
+  Write destinations preserve literal shell characters and reject terminal
+  controls. Device-attribute replies share the PTY input budget.
+- A Restore that cannot serialize or queue completely closes its peer without
+  completing attachment, taking sizing ownership, or arming last-client exit.
+  Serialization restores transient terminal modes on every failure path.
+
 ### Multi-client terminal ownership
 
 - Every attached terminal remembers its dimensions. A completed attach, focus
@@ -235,7 +249,7 @@ a clean `~/code/smolmux` on `main`:
 
 ```sh
 SMOLMUX_ZMX_PATH="<prefix>/bin/zmx" bun test
-SMOLMUX_ZMX_PATH="<prefix>/bin/zmx" SMOLMUX_RUN_PTY_TESTS=1 bun test tests/multiplexer.e2e.test.ts
+SMOLMUX_ZMX_PATH="<prefix>/bin/zmx" SMOLMUX_RUN_PTY_TESTS=1 bun test tests/instance.e2e.test.ts
 ```
 
 No external proof is required: the fork has no hosted CI. `test/create.bats`
@@ -253,12 +267,12 @@ smolmux's Companion pin. After the leased push of `integration`, run:
 It reads the published `integration` commit from the bound checkout (which
 must equal `fork/integration`), derives the build string from the fork's
 `build.zig.zon`, pulls smolmux `main` (another session commits there), builds the
-Companion ReleaseFast from a detached worktree at that commit, writes
-`~/code/smolmux/companion.json`, runs smolmux's suite and e2e against the build,
+Companion through smolmux's `scripts/build-companion.sh` after writing a
+provisional `~/code/smolmux/companion.json`, runs smolmux's suite and e2e against the build,
 commits the pin on smolmux `main`, pushes, and then refreshes this machine's
 editable smolmux's Companion (`~/.local/bin/smolmux-zmx`, through smolmux's
-`scripts/install-companion.sh`) — or reverts the file and reports which gate
-failed. It says when the fork's `build.zig.zon` changed since the
+`scripts/install-companion.sh`) — or restores its provisional pin byte for byte and reports which gate
+failed. Concurrent edits are retained for review. It says when the fork's `build.zig.zon` changed since the
 previous pin, because smolmux's `THIRD_PARTY_NOTICES.md` Companion section is kept
 by hand against it. Cutting an smolmux release is a separate, deliberate act.
 
