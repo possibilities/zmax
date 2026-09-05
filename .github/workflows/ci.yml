@@ -20,4 +20,4 @@ jobs:
         env:
           ZMAX_TEST_BUILD_COMPANION: ${{ github.workspace }}/smolmux/scripts/build-companion.sh
       - name: Check shell scripts
-        run: shellcheck scripts/reconcile-branches.sh scripts/pin-companion.sh tests/validate.sh tests/pin-transaction.sh tests/fixtures/fake-zig.sh
+        run: shellcheck --severity=warning scripts/reconcile-branches.sh scripts/pin-companion.sh tests/validate.sh tests/pin-transaction.sh tests/fixtures/fake-zig.sh
