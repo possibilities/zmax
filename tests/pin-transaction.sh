@@ -82,9 +82,9 @@ expected_build="0.7.0+fmx.${integration_sha:0:12}"
 # --check plans and writes nothing.
 check_output=$(run_pin --check)
 printf '%s\n' "$check_output" | grep -F "PIN  $old_sha -> $integration_sha" >/dev/null \
-    || fail "--check did not plan the pin move"
+    || { printf '%s\n' "$check_output" >&2; fail "--check did not plan the pin move"; }
 printf '%s\n' "$check_output" | grep -F "BUILD 0.7.0+fmx.${old_sha:0:12} -> $expected_build" >/dev/null \
-    || fail "--check did not plan the build string"
+    || { printf '%s\n' "$check_output" >&2; fail "--check did not plan the build string"; }
 [ -z "$(git -C "$smolmux" status --porcelain)" ] || fail "--check changed smolmux"
 
 # Unpublished integration is refused before anything is built.
@@ -96,7 +96,7 @@ unpublished_status=$?
 set -e
 [ "$unpublished_status" -ne 0 ] || fail "pinned an unpublished integration"
 printf '%s\n' "$unpublished_output" | grep -F 'is not the published fork/integration' >/dev/null \
-    || fail "did not explain the unpublished integration"
+    || { printf '%s\n' "$unpublished_output" >&2; fail "did not explain the unpublished integration"; }
 git -C "$zmx" reset --quiet --hard "$integration_sha"
 
 # A Companion that misreports its build is refused, and the pin file is untouched.
@@ -106,7 +106,7 @@ misreport_status=$?
 set -e
 [ "$misreport_status" -ne 0 ] || fail "accepted a Companion reporting the wrong build"
 printf '%s\n' "$misreport_output" | grep -F "reports '0.7.0', not $expected_build" >/dev/null \
-    || fail "did not explain the misreported build"
+    || { printf '%s\n' "$misreport_output" >&2; fail "did not explain the misreported build"; }
 grep -F "\"commit\": \"$old_sha\"" "$smolmux/companion.json" >/dev/null \
     || fail "a refused pin changed companion.json"
 [ -z "$(git -C "$smolmux" status --porcelain)" ] || fail "a refused pin left smolmux dirty"
@@ -130,7 +130,7 @@ gate_failure_status=$?
 set -e
 [ "$gate_failure_status" -ne 0 ] || fail "accepted a failed smolmux gate"
 printf '%s\n' "$gate_failure_output" | grep -F 'smolmux typecheck failed against the new pin' >/dev/null \
-    || fail "did not explain the failed smolmux gate"
+    || { printf '%s\n' "$gate_failure_output" >&2; fail "did not explain the failed smolmux gate"; }
 [ "$(git -C "$smolmux" hash-object companion.json)" = "$pin_before_failure" ] \
     || fail "a failed smolmux gate did not restore companion.json byte for byte"
 [ -z "$(git -C "$smolmux" status --porcelain)" ] || fail "a failed smolmux gate left smolmux dirty"
