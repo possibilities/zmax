@@ -122,7 +122,8 @@ set -e
 # A failed smolmux gate restores companion.json byte for byte, including its final
 # newline. Command substitution used to lose it and leave the clean checkout
 # dirty after the otherwise-correct rollback.
-ln -s "$(command -v false)" "$fake_bin/bun"
+printf '#!/bin/sh\nexit 1\n' >"$fake_bin/bun"
+chmod +x "$fake_bin/bun"
 pin_before_failure=$(git -C "$smolmux" hash-object companion.json)
 set +e
 gate_failure_output=$(run_pin_with_tests --apply 2>&1)
