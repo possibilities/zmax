@@ -93,7 +93,9 @@ git -C "$smolmux_checkout" rev-parse --is-inside-work-tree >/dev/null 2>&1 \
 [ -f "$pin_file" ] || die "$pin_file is missing"
 current_commit=$(pin_value commit)
 current_build=$(pin_value build)
-[ -n "$current_commit" ] && [ -n "$current_build" ] || die "$pin_file has no commit and build"
+if [ -z "$current_commit" ] || [ -z "$current_build" ]; then
+    die "$pin_file has no commit and build"
+fi
 
 printf 'PIN  %s -> %s\n' "$current_commit" "$commit"
 printf 'BUILD %s -> %s\n' "$current_build" "$build"
