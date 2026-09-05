@@ -1,0 +1,12 @@
+{
+  "inputs": [
+    "scripts",
+    "tests/validate.sh",
+    "tests/pin-transaction.sh",
+    "tests/fixtures/fake-zig.sh"
+  ],
+  "command": [
+    "bash",
+    "scripts/check-static.sh"
+  ]
+}

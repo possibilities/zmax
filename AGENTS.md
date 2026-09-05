@@ -59,6 +59,13 @@ branch; age, ownership, request state, and namespace are never deletion intent.
 
 ## Validation
 
+Before pushing, `python3 .githooks/pre-push --check` runs CI's shell syntax and
+ShellCheck checks without building the Companion. Install the exact-commit
+hook once with `scripts/install-hooks.sh` from the canonical checkout. All
+worktrees share it; opted-in repositories share one per-user lock (15-second
+wait, 30-second checking deadline). Python 3.9+, Bash, and ShellCheck must
+already be installed. Existing hooks are retained and reported.
+
 Run:
 
 ```sh

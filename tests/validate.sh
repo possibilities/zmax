@@ -10,10 +10,7 @@ fail() {
     exit 1
 }
 
-bash -n scripts/reconcile-branches.sh
-bash -n scripts/pin-companion.sh
-bash -n tests/pin-transaction.sh
-bash -n tests/fixtures/fake-zig.sh
+python3 .githooks/pre-push --check
 for script in scripts/reconcile-branches.sh scripts/pin-companion.sh tests/pin-transaction.sh tests/fixtures/fake-zig.sh; do
     [ -x "$script" ] || fail "$script is not executable"
 done
