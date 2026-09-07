@@ -164,7 +164,7 @@ reported=$(ZMX_DIR="$work_dir/zmx-dir" "$companion" version 2>/dev/null | awk 'N
 
 if [ "$skip_tests" -ne 1 ]; then
     (cd "$smolmux_checkout" && bun run typecheck) || { die "smolmux typecheck failed against the new pin"; }
-    (cd "$smolmux_checkout" && SMOLMUX_ZMX_PATH="$companion" bun test) \
+    (cd "$smolmux_checkout" && SMOLMUX_ZMX_PATH="$companion" SMOLMUX_RUN_MIGRATION_TESTS=1 bun test) \
         || { die "smolmux tests failed against Companion $build"; }
     (cd "$smolmux_checkout" && SMOLMUX_ZMX_PATH="$companion" SMOLMUX_RUN_PTY_TESTS=1 bun test tests/instance.e2e.test.ts) \
         || { die "smolmux e2e failed against Companion $build"; }

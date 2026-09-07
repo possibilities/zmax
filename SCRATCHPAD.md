@@ -6,25 +6,31 @@ entries on every maintenance cycle and appends one compact history entry.
 ## Delivered baseline
 
 - Last completed maintenance audit: 2026-08-29.
-- Last review/repair delivery: 2026-09-04.
+- Last feature delivery: 2026-09-07 (Swappable PTYs).
 - Upstream base: `fb1b6b66476fc83c1453b0cde8fe2a50166eb395`
   (`neurosnap/zmx:main`, "fix(docs): remove stale list --where references
-  (#250)"). This delivery repairs the existing stack without rebasing it.
-- Published integration: `2be662da7716607fcacfe4e55c26f7ba4146c3d5`, 26
+  (#250)"). This delivery extends the existing stack without rebasing it.
+- Published integration: `9b8e5bc8df5c8313ceb7ac8a62e69958f596ed3e`, 27
   commits above the base, with protocol version 1 unchanged.
-- Companion pin in smolmux: commit `2be662da7716`, build
-  `0.7.0+fmx.2be662da7716`, moved by `scripts/pin-companion.sh` in smolmux commit
-  `51e24b7a979ac8dfe8a3fec928b1c714fcd73a7a`. The editable smolmux Companion was
-  refreshed to the same build. Smolmux is version 0.6.3; agentmux is 0.27.3.
+- Companion pin in smolmux: commit `9b8e5bc8df5c`, build
+  `0.7.0+fmx.9b8e5bc8df5c`, moved by `scripts/pin-companion.sh` in smolmux commit
+  `f91546a1e433f5609416b84e60aad3ae00c770dd`. The compatible unknown-status
+  decoder landed first in `7415d111b06184b810419f6d166bf37d9d40e6f9`; the pin
+  also includes concurrent consumer repair `3e0d0ab`.
 - Gate for the exact candidate: formatting, Debug build, Zig tests, Bats
-  96/96, Companion ReleaseFast build, smolmux 269 unit tests and all three
-  Companion-backed PTY tests passed on Mac arm64. The consumer repeated
-  typecheck, unit and PTY gates before committing the pin. Agentmux's final
-  integration passed 9/9 scenarios and 121 assertions against this build.
+  113/113, Companion ReleaseFast build, smolmux typecheck, 303 tests including
+  real repeated migration, and all three Companion-backed PTY tests passed
+  on Mac arm64. The consumer repeated typecheck, unit/migration and PTY gates
+  before committing the pin. The consumer's Mac local gate also passed.
+- Compatibility checks passed: an old daemon refuses migration within the
+  documented 60-second budget; an old executable as importer rolls back with
+  live IO preserved; an old attach client retains known exit status 7 against
+  the new daemon. No protocol or API version changed.
 - The workshop's transactional pin tests passed, including concurrent edits,
   concurrent commits, failed commit cleanup, failed gates and the current
-  PTY test target. Independent adversarial review reported no remaining
-  concrete findings in the repaired paths.
+  PTY test target and migration-test environment. Independent adversarial
+  review closed the snapshot failure, parser state, pending-wrap, alternate
+  screen and directory validation findings after repair.
 
 ## Audited-upstream frontier
 
@@ -47,12 +53,11 @@ entries on every maintenance cycle and appends one compact history entry.
 
 ## Carried state
 
-Every entry below remains downstream-only at the audited-upstream frontier
-`fb1b6b6`; current upstream semantics were inspected against every entry, and
-no upstream replacement satisfies one. Every listed commit is an ancestor of
-the exact published integration and passed the fork and smolmux gates above. Each
-feature is retired only after an equivalent upstream implementation is read
-and its path exercised.
+The inventory is recorded against audited-upstream frontier `fb1b6b6`; later
+feature deliveries do not advance that frontier. Every listed commit is an
+ancestor of the exact published integration and passed the fork and smolmux
+gates above. Each feature is retired only after an equivalent upstream
+implementation is read and its path exercised.
 
 - Portable wire: `e0da029`, `5c07655`, `bf2cc50`.
 - Negotiated clients: `a094f6c`, `9e33017`, `079e9f5`.
@@ -69,6 +74,10 @@ and its path exercised.
   repair in `f1f7645` and swept-socket record preservation in `6526e5e`.
 - Scrollback: `452f452`, `15327ca`; its early-ending transfer race test is
   made deterministic by `e4064d1`.
+- Swappable PTYs: `9b8e5bc`, ported from preserved `a26f4bf` onto `2be662d`,
+  including handoff rollback, terminal state, queue-budget and directory
+  validation repairs. Smolmux decodes unknown status on wire and in records
+  from `7415d11` onward.
 - Companion build: `52d25cf`, `b5889fb`, `8a536ca`.
 
 ## Offers
@@ -86,20 +95,33 @@ and its path exercised.
 
 ## Current notes
 
+- The original Swappable PTYs implementation `a26f4bf` remains preserved on
+  `feat/swappable-ptys` and in its verified handoff bundle. Delivery `9b8e5bc`
+  retains the later client and Restore safeguards. This is feature delivery,
+  not an upstream audit; the frontier and both mirror tips remain unchanged.
+- The historical Swappable PTYs review noted two Restore defects. The
+  synchronized-output failure cleanup is fixed by `2be662d`; the screenful
+  above the viewport remains lost on Restore, including what `app.capture`
+  can read after reattach. Handoff uses its separate continuous serializer.
+
 - The 2026-09-04 review captured upstream `793b837500c7215cf51297ec4d51e2a174d365ee`
   but did not audit its delta or rebase onto it. The bound local `main` was
   already there; the fork mirror remains at `fb1b6b6`. This repair published
   only Integration under its original `2ffb1c1` lease and preserved the three
   `push-*` heads. The audited frontier remains `fb1b6b6`.
-- Existing Sessions retain their original daemon executable until restarted.
-  Installation changes new Sessions without disrupting the operator's live
-  work. Per-connection bounds do not constitute an aggregate Session quota.
+- Installation changes new Sessions without disrupting the operator's live
+  work. A daemon predating `migrate` cannot hand off; a migration-capable
+  Session changes executable only when explicitly handed off. Handoffs drop
+  clients, and reattachment remains their responsibility. Per-connection
+  bounds do not constitute an aggregate Session quota.
 
 - `fdd778b` now observes child status with `waitid(P_PID, WEXITED | WNOHANG |
   WNOWAIT)` and leaves the zombie to pin its PID and process group until the
   teardown's single `waitpid`; the prior PID-reuse signalling note is
-  resolved. `551518a` keeps a scripted attach alive after non-terminal stdin
-  EOF so it receives `Exit` and returns the exact child status.
+  resolved for a daemon's own child. An adopted child cannot use this path;
+  PID probes retain a probe-to-signal race and its exit status is unknown.
+  `551518a` keeps a scripted attach alive after non-terminal stdin EOF so it
+  receives `Exit` and returns the exact status when known.
 - Upstream removed stock zmx's stale `list --where` documentation at
   `fb1b6b6`; the fork's real `--where` implementation, README help, and fish
   completion remain together in `241efd3`.
@@ -150,6 +172,18 @@ and its path exercised.
   uses the consumer's shared builder, runs `instance.e2e.test.ts`, and preserves
   concurrent edits/commits on rollback. Existing upstream accommodations and
   stance are unchanged; this was not an upstream audit, so no frontier moved.
+- 2026-09-04 (previously unshipped): Swappable PTYs was built and independently
+  reviewed on `feat/swappable-ptys` at `a26f4bf`, with fmt/build/unit checks,
+  Bats 105/106 and the then-current consumer suite. The single directory-mode
+  failure was also reproduced on that session's baseline. Neither Integration
+  nor the Companion pin moved; these results are historical, not today's gate.
+- 2026-09-07: Ported and reviewed Swappable PTYs onto the bounded-client stack
+  as `9b8e5bc`; the full gate passed (113 Bats, 303 consumer tests, 3 PTY e2e).
+  Landed the compatible Exit decoder in `7415d11`, published Integration
+  under its original `2be662d` lease, and moved the pin through the maintained
+  transaction in `f91546a`. Every other fork head, the original feature ref,
+  and the verified bundle were preserved. No upstream audit, mirror movement,
+  upstream offer or release tag; the audited frontier remains `fb1b6b6`.
 
 ## The consumer is called smolmux; two fork names deliberately are not
 

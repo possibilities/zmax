@@ -51,3 +51,11 @@ the offers' fate, rebases the stack onto current upstream, gates the
 candidate, publishes `integration` under a lease, moves smolmux's pin, and updates
 the scratchpad.
 _Avoid_: update, release (that is smolmux's act).
+
+**Handoff** — One session moving from its daemon to a freshly executed zmx
+binary: its PTY master and listening socket cross a private socket, the child
+continues, and the source leaves without destructive teardown. `zmx migrate`
+requests one; parenthood does not cross, so the adopted child's exit status
+becomes unknown.
+_Avoid_: restart, reload, reconnect, reattach (a client's act), swap (the
+feature is Swappable PTYs; one act is a handoff).

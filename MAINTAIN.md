@@ -168,10 +168,14 @@ later cycle reconciles only what this section names.
 
 - Every attach begins with `RestoreBegin`, the whole terminal as it stands,
   and `Ready`; live bytes reach only ready clients. A reconnect replays onto a
-  clean screen the same way.
-- The child's exit is exact: `waitpid` is captured, final PTY bytes drain
-  before `Exit`, the record carries code, signal, and reason, a session winds
-  down once, and `zmx attach <cmd>` exits with the child's status.
+  clean screen the same way. Restore retains a measured limitation: its clear
+  between history and viewport costs roughly one screenful above the viewport.
+  The handoff snapshot has its own serializer and does not share that clear.
+- The child's exit is exact when its daemon forked it: `waitpid` is captured,
+  final PTY bytes drain before `Exit`, the record carries code, signal, and
+  reason, a session winds down once, and `zmx attach <cmd>` exits with the
+  child's status.
+  An adopted child has unknown status, as specified under Swappable PTYs.
 - `daemonize()` returns on an acknowledged exec rather than a sleep, so a
   first attach in a release build never loses the child's opening output;
   stdio is written as streams.
@@ -198,6 +202,38 @@ later cycle reconciles only what this section names.
 - `--scrollback-lines` and `ZMX_SCROLLBACK_LINES` govern what the shadow
   terminal keeps and a restore replays; history is transferred in chunks, and
   an incomplete transfer fails instead of printing a fragment.
+
+### Swappable PTYs
+
+- `zmx migrate <name> [--to <zmx>]` hands a live session to another executable,
+  defaulting to the command's binary. The child and its PID continue; the PTY
+  master and listening socket cross a private authenticated 0600 Unix socket
+  using `SCM_RIGHTS`. Connections during the exchange wait in the listener's
+  backlog. Migration is per session, never an automatic upgrade sweep.
+- The manifest carries identity, labels, command, cwd, creation time, task
+  state, scrollback limit, queued PTY input and terminal state. Primary and
+  alternate screens, scrollback, cursor placement, pending wrap and tabstops
+  survive. Incomplete escape sequences or UTF-8 output refuse the handoff
+  until the source receives their remainder. A snapshot or labels allocation
+  failure refuses the whole handoff; the manifest is capped at 64 MiB.
+- Token, manifest validation, descriptor transfer, terminal restoration and
+  commit are ordered. Precommit failure kills and reaps the importer and
+  leaves the source serving its session. Socket IO is nonblocking with one
+  deadline per step; a stalled or slowly reading peer cannot extend it.
+  A target resolving a different session socket path refuses before ownership
+  changes. Migration replies obey the normal client output budget.
+- After commit the source skips child signals, exit records and socket
+  deletion. Parenthood does not cross: the importer never waits for the
+  adopted child. Exit byte 3 bit 0 means status unknown; zero preserves legacy
+  known status, protocol v1 and existing reason values. Discovery records and
+  smolmux events carry null code/signal. `zmx attach` diagnoses unknown status
+  and returns 0; smolmux's thin Client diagnoses an unknown Runtime status and
+  returns 1. An adopted child observed gone is never signalled; PID probes
+  cannot remove the residual probe-to-signal race. Repeated handoffs work.
+- The final-client policy crosses disarmed and arms after the new daemon's
+  first completed terminal attach. Connected clients are dropped; reattachment
+  is the client's responsibility. Daemons predating `migrate` cannot be
+  upgraded through a handoff; failed or unsupported targets retain the source.
 
 ### Companion build
 
@@ -230,6 +266,8 @@ later cycle reconciles only what this section names.
   `AGENTS.md` says what must exist first (a drain or a carry for
   survivors); a stack change that needs a new version waits for that, and
   the two move together in one pin.
+  Assigning reserved bytes without a version bump, such as the Exit unknown
+  flag, also requires the consumer decoder to land before the pin moves.
 
 ## Gate
 
@@ -248,7 +286,7 @@ Also run the smolmux suite against that Companion build before publishing, from
 a clean `~/code/smolmux` on `main`:
 
 ```sh
-SMOLMUX_ZMX_PATH="<prefix>/bin/zmx" bun test
+SMOLMUX_ZMX_PATH="<prefix>/bin/zmx" SMOLMUX_RUN_MIGRATION_TESTS=1 bun test
 SMOLMUX_ZMX_PATH="<prefix>/bin/zmx" SMOLMUX_RUN_PTY_TESTS=1 bun test tests/instance.e2e.test.ts
 ```
 

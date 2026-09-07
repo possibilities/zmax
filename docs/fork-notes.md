@@ -40,6 +40,24 @@ Things that cost time to discover and are not obvious from the code.
 - **EOF does not prove the child is dead**, only that every slave fd closed.
   In practice it is very hard to separate the two: the session leader keeps the
   controlling terminal, so a child closing its stdio does *not* produce EOF.
+- **Descriptor ownership can cross; parenthood cannot.** A handoff sends the
+  PTY master and listening socket over `SCM_RIGHTS`. The importer must never
+  `waitpid` the child it adopted: the wrapper treats `ECHILD` as unreachable.
+  After PTY EOF, PID probes supply liveness but cannot pin the number against
+  reuse. Exit flags and records report unknown status honestly.
+- **The terminal is not its parser.** A partial UTF-8 character or escape
+  sequence belongs to `vt_stream`, not the shadow terminal. Handoff refuses
+  until the parser is ground and its UTF-8 decoder has no pending bytes.
+  CUP also clears pending wrap, so that flag crosses separately for each
+  screen; the final cursor is restored after margins and tabstops.
+- **Import must validate the source directory.** A stock target and Companion
+  can default to different directories even when they speak the same manifest.
+  Compare the complete session socket path before taking ownership, or teardown
+  could unlink an unrelated same-name session in the target directory.
+- **Discovery treats files in the socket directory as sessions.** The private
+  handoff socket therefore lives under logs, named `h-<daemon pid>.sock` to fit
+  macOS's socket-path limit. Both daemons briefly share the session log with
+  independent offsets; the seam can interleave a log entry.
 - **`handleKill` signals the process group** (`kill(-pid, …)`), which is what
   reaps whatever the child backgrounded. Skipping it because the child was
   already reaped leaks those processes.
@@ -144,3 +162,18 @@ runs `tests/instance.e2e.test.ts`. The former multiplexer test path no longer
 exists. Failure restores only the pin bytes written by the transaction;
 concurrent edits remain available for review. This review adds safeguards to
 the existing protocol version 1 and does not audit newer upstream commits.
+
+## Handoff continuation (2026-09-07)
+
+The original `a26f4bf` was based on `2ffb1c1`, before `2be662d` bounded client
+queues and made Restore transactional. Its loop now takes a terminal pointer,
+so the port retains per-peer error handling and validates dimensions in the
+shared terminal constructor. Handoff uses the newer fallible color/cwd helpers
+and refuses manifest construction on snapshot or label failure. Migration
+acknowledgements use the same queue budget as other replies.
+
+The old review's synchronized-output cleanup finding is already fixed by
+`2be662d`; retain its `defer`. Restore's separate screenful loss remains visible
+in smolmux's `app.capture` after reattach and is covered by the consumer's bound
+test. Handoff serializes continuous history and both screens without that clear.
+Do not treat the historical 105/106 Bats result as current gate evidence.

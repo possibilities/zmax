@@ -188,6 +188,9 @@ printf '%s\n' "$*" >>"$BUN_TEST_RECEIPT"
 if [ "$1" = test ] && [ "$#" -gt 1 ]; then
     [ "$2" = tests/instance.e2e.test.ts ] && [ -f "$2" ] || exit 1
 fi
+if [ "$1" = test ] && [ "$#" -eq 1 ]; then
+    [ "${SMOLMUX_RUN_MIGRATION_TESTS:-0}" = 1 ] || exit 1
+fi
 BUN
 chmod +x "$fake_bin/bun"
 # The real thing: pin written, committed on main, pushed.
