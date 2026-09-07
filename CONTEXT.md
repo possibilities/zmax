@@ -35,7 +35,7 @@ never from the request's state.
 _Avoid_: PR branch, upstreamed patch, carry.
 
 **Companion pin** — smolmux's `companion.json`: the integration commit an smolmux
-release is built with and the build string `<zon version>+fmx.<12 hex>` a
+release is built with and the build string `<zon version>+arthack.<12 hex>` a
 Companion built from it reports. The consumer binding of this workshop; moved
 only by `scripts/pin-companion.sh`.
 _Avoid_: lock file, dependency version.

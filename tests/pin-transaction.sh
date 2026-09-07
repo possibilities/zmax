@@ -77,7 +77,7 @@ run_pin_with_tests() {
     "$root/scripts/pin-companion.sh" "$@"
 }
 
-expected_build="0.7.0+fmx.${integration_sha:0:12}"
+expected_build="0.7.0+arthack.${integration_sha:0:12}"
 
 # --check plans and writes nothing.
 check_output=$(run_pin --check)

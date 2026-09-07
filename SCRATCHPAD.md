@@ -6,35 +6,36 @@ entries on every maintenance cycle and appends one compact history entry.
 ## Delivered baseline
 
 - Last completed maintenance audit: 2026-08-29.
-- Last feature delivery: 2026-09-07 (Swappable PTYs).
+- Last delivery: 2026-09-07 (arthack build identity, after Swappable PTYs).
 - Upstream base: `fb1b6b66476fc83c1453b0cde8fe2a50166eb395`
   (`neurosnap/zmx:main`, "fix(docs): remove stale list --where references
   (#250)"). This delivery extends the existing stack without rebasing it.
-- Published integration: `9b8e5bc8df5c8313ceb7ac8a62e69958f596ed3e`, 27
+- Published integration: `865699c27e434a8788f5dfd05fdf8788b68bfb36`, 28
   commits above the base, with protocol version 1 unchanged.
-- Companion pin in smolmux: commit `9b8e5bc8df5c`, build
-  `0.7.0+fmx.9b8e5bc8df5c`, moved by `scripts/pin-companion.sh` in smolmux commit
-  `f91546a1e433f5609416b84e60aad3ae00c770dd`. The compatible unknown-status
-  decoder landed first in `7415d111b06184b810419f6d166bf37d9d40e6f9`; the pin
-  also includes concurrent consumer repair `3e0d0ab`.
+- Companion pin in smolmux: commit `865699c27e43`, build
+  `0.7.0+arthack.865699c27e43`, moved by `scripts/pin-companion.sh` in smolmux
+  commit `3a3611ca8be6ead8bcc4c730b5c775e638f522b4`. Consumer commit `ca3e5f4`
+  first made its builder verify the pinned version and commit independently
+  of the fork's metadata namespace. The unknown-status decoder remains in
+  `7415d11`.
 - The canonical source installer linked smolmux 0.9.1, rebuilt its local PTY
-  helper, and verified the installed Companion at the same pin with
-  `smolmux doctor`. Hosted consumer CI run `34083221473` passed Linux and
-  macOS on both arm64 and x86_64 for `f91546a`.
+  helper, and verified the installed Companion at this pin with `smolmux doctor`.
 - Gate for the exact candidate: formatting, Debug build, Zig tests, Bats
   113/113, Companion ReleaseFast build, smolmux typecheck, 303 tests including
   real repeated migration, and all three Companion-backed PTY tests passed
   on Mac arm64. The consumer repeated typecheck, unit/migration and PTY gates
   before committing the pin. The consumer's Mac local gate also passed.
-- Compatibility checks passed: an old daemon refuses migration within the
-  documented 60-second budget; an old executable as importer rolls back with
+- Swappable PTYs compatibility checks at `9b8e5bc` passed: an old daemon
+  refuses migration within the documented 60-second budget; an old executable
+  as importer rolls back with
   live IO preserved; an old attach client retains known exit status 7 against
   the new daemon. No protocol or API version changed.
 - The workshop's transactional pin tests passed, including concurrent edits,
   concurrent commits, failed commit cleanup, failed gates and the current
-  PTY test target and migration-test environment. Independent adversarial
-  review closed the snapshot failure, parser state, pending-wrap, alternate
-  screen and directory validation findings after repair.
+  PTY test target and migration-test environment; the fixture now proves a
+  move from the historical `fmx` marker to `arthack`. The Swappable PTYs
+  adversarial review closed the snapshot failure, parser state, pending-wrap,
+  alternate screen and directory validation findings after repair.
 
 ## Audited-upstream frontier
 
@@ -82,7 +83,8 @@ implementation is read and its path exercised.
   including handoff rollback, terminal state, queue-budget and directory
   validation repairs. Smolmux decodes unknown status on wire and in records
   from `7415d11` onward.
-- Companion build: `52d25cf`, `b5889fb`, `8a536ca`.
+- Companion build: `52d25cf`, `b5889fb`, `8a536ca`, with the `arthack` owner
+  marker and matching build guard in `865699c`.
 
 ## Offers
 
@@ -192,25 +194,25 @@ implementation is read and its path exercised.
   workshop main after comparing all four documents with the delivered state.
   The reconciled specification and current paths, safeguards and gate records
   supersede that branch's pre-delivery wording. The full source installation
-  passed doctor, and the consumer's four-platform hosted CI is green.
+  passed doctor, and hosted run `34083221473` passed all four platforms for
+  consumer pin `f91546a`.
+- 2026-09-07: Renamed the published fork build marker from `fmx` to `arthack`
+  in `865699c`, retaining the Companion build guard and existing session
+  addresses. Consumer `ca3e5f4` verifies pinned version/commit without an owner
+  name assumption. Full native, 113 Bats, 303 consumer and 3 PTY gates passed;
+  the CLI suite ran with empty stdin after the harness's open input stalled
+  its no-command case. Published under the original `9b8e5bc` lease and moved
+  the pin transactionally in `3a3611c`. All other fork heads and the
+  audited frontier remain unchanged.
 
-## The consumer is called smolmux; two fork names deliberately are not
+## Build naming and the legacy session address
 
-The consumer this fork serves was renamed from fmx to smolmux, and this
-repository now says smolmux everywhere it means that program. Two names inside
-the fork itself did not move, and neither is an oversight.
+The fork's owner marker is `arthack`; the old `fmx` marker remains only in
+historical build identities. The build guard, maintained pin script and
+consumer verification move together. The delivered baseline above records
+the last completed pin transaction.
 
-`-Dversion=<zon version>+fmx.<12 hex>` stays. `build.zig` refuses a version
-naming fmx unless `-Dcompanion` was passed, and that refusal is what stops a
-stock build passing the consumer's pin and then keeping a human's by-hand
-sessions in the stock directory. Renaming the marker without moving the guard
-would silently disarm it.
-
-The `-Dcompanion` directory default stays `/tmp/fmx-<uid>/zmx`. MAINTAIN.md
-names it as a carried feature, so changing it is an inventory change with a
-gate rather than a rename.
-
-Both belong in a stack commit with the gate that goes with them. Until then
-smolmux keeps its own sockets in `/tmp/smolmux-<uid>` and passes `ZMX_DIR` on
-every Companion command, so nothing is broken; the only cost is that a by-hand
-`smolmux-zmx list` needs the directory named, which `smolmux doctor` prints.
+The `-Dcompanion` directory default remains `/tmp/fmx-<uid>/zmx`, a session
+address independent of the build name. Smolmux selects its own sockets under
+`/tmp/smolmux-<uid>/zmx` through `ZMX_DIR`. This naming change does not move
+either socket directory or change the protocol.

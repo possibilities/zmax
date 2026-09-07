@@ -240,20 +240,18 @@ later cycle reconciles only what this section names.
 - `zig build -Dcompanion` keeps a directory of its own by default —
   `/tmp/fmx-<uid>/zmx`, logs under it, created 0700/0600 and refused unless
   private and the caller's own — and never touches a stock zmx's directory.
-  `-Dversion=<zon version>+fmx.<12 hex>` is what the Companion reports; a
-  `+fmx.` version without `-Dcompanion` refuses to build.
-- **Both of those still say fmx, and that is deliberate.** The consumer was
-  renamed to smolmux; the fork was not, because each name is load-bearing
-  here. `build.zig` refuses a version naming fmx unless `-Dcompanion` was
-  passed, which is what stops a stock build passing the consumer's pin and
-  then keeping a human's own sessions in the wrong directory — renaming the
-  marker without moving the guard would silently disarm it. The directory
-  default is a carried feature this section names, so changing it is an
-  inventory change with a gate. Both belong in a stack commit of their own,
-  not in a consumer's rename, and until then smolmux keeps its own files in
-  `/tmp/smolmux-<uid>` and passes `ZMX_DIR` on every command; `smolmux doctor`
-  prints the by-hand command with the directory named. `version` and `help` say what a Companion build's
-  defaults are.
+  `-Dversion=<zon version>+arthack.<12 hex>` is what the published fork build
+  reports. The metadata identifies the fork's owner independently of its
+  consumers; smolmux installs its copy as `smolmux-zmx`.
+- A `+arthack.` version without `-Dcompanion` refuses to build, so a stock
+  build cannot pass the consumer's pin while using the stock session directory.
+  The pin script generates the owner marker; the consumer checks the pinned
+  version and commit without hardcoding the fork's metadata namespace.
+- `/tmp/fmx-<uid>/zmx` remains the legacy default session address. Changing a
+  build's name does not move existing sockets. Smolmux selects its own
+  `/tmp/smolmux-<uid>/zmx` through `ZMX_DIR` on every command; `smolmux doctor`
+  prints the by-hand command with that directory named. `version` and `help`
+  describe a Companion build's defaults.
 
 ### Scope
 
@@ -278,7 +276,7 @@ zig fmt --check src/ build.zig
 zig build
 zig build test
 bats test/
-companion_build="$(grep -m 1 -E '^[[:space:]]*\.version = "' build.zig.zon | sed 's/.*"\([^"]*\)".*/\1/')+fmx.$(git rev-parse --short=12 HEAD)"
+companion_build="$(grep -m 1 -E '^[[:space:]]*\.version = "' build.zig.zon | sed 's/.*"\([^"]*\)".*/\1/')+arthack.$(git rev-parse --short=12 HEAD)"
 zig build -Dcompanion -Doptimize=ReleaseFast -Dversion="$companion_build" --prefix "$(mktemp -d)/companion"
 ```
 

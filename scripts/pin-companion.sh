@@ -73,7 +73,7 @@ zon_version=$(git -C "$zmx_checkout" show "$commit:build.zig.zon" \
     | grep -m 1 -E '^[[:space:]]*\.version = "' \
     | sed 's/^[[:space:]]*\.version = "\([^"]*\)",.*/\1/')
 [ -n "$zon_version" ] || die "no .version in build.zig.zon at $commit"
-build="$zon_version+fmx.${commit:0:12}"
+build="$zon_version+arthack.${commit:0:12}"
 repository=$(git -C "$zmx_checkout" remote get-url "$fork_remote")
 case "$repository" in
     git@github.com:*) repository="https://github.com/${repository#git@github.com:}" ;;
