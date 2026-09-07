@@ -17,6 +17,10 @@ entries on every maintenance cycle and appends one compact history entry.
   `f91546a1e433f5609416b84e60aad3ae00c770dd`. The compatible unknown-status
   decoder landed first in `7415d111b06184b810419f6d166bf37d9d40e6f9`; the pin
   also includes concurrent consumer repair `3e0d0ab`.
+- The canonical source installer linked smolmux 0.9.1, rebuilt its local PTY
+  helper, and verified the installed Companion at the same pin with
+  `smolmux doctor`. Hosted consumer CI run `34083221473` passed Linux and
+  macOS on both arm64 and x86_64 for `f91546a`.
 - Gate for the exact candidate: formatting, Debug build, Zig tests, Bats
   113/113, Companion ReleaseFast build, smolmux typecheck, 303 tests including
   real repeated migration, and all three Companion-backed PTY tests passed
@@ -184,6 +188,11 @@ implementation is read and its path exercised.
   transaction in `f91546a`. Every other fork head, the original feature ref,
   and the verified bundle were preserved. No upstream audit, mirror movement,
   upstream offer or release tag; the audited frontier remains `fb1b6b6`.
+- 2026-09-07: Merged the original documentation history at `f2b81c8` into
+  workshop main after comparing all four documents with the delivered state.
+  The reconciled specification and current paths, safeguards and gate records
+  supersede that branch's pre-delivery wording. The full source installation
+  passed doctor, and the consumer's four-platform hosted CI is green.
 
 ## The consumer is called smolmux; two fork names deliberately are not
 
