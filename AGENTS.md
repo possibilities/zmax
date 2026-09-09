@@ -14,10 +14,12 @@ the Companion smolmux bundles as `smolmux-zmx`. Read `CONTEXT.md`, `MAINTAIN.md`
 - `/maintain` is the shared `maintain` skill in `~/code/agentguidance`, the
   operating procedure for every fork workshop on this machine. zmx-specific
   procedure belongs in `MAINTAIN.md`, never in a copy of the skill here.
-- Every behavior the fork carries is reversed into `MAINTAIN.md` § Features by
-  the same change that builds it, in the same commit. The entry is part of the
-  work, never a follow-up: a carried feature the inventory does not name is
-  unfinished, because the next cycle reconciles only what that section states.
+- Every behavior the fork carries is reflected in `MAINTAIN.md` § Features
+  in the same delivered change. The fork and workshop have separate commits:
+  link the fork commit from the inventory and the workshop commit from the
+  delivery record, then verify the consumer pin before declaring completion.
+  A carried feature the inventory does not name is unfinished, because the
+  next cycle reconciles only what that section states.
 - `SCRATCHPAD.md` is current maintenance state, not a second specification or
   an unbounded transcript.
 - `scripts/reconcile-branches.sh` is the thin entrypoint to the skill's shared

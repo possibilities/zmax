@@ -34,8 +34,8 @@ whether or not the offer lands, and "landed" is read from upstream `main`,
 never from the request's state.
 _Avoid_: PR branch, upstreamed patch, carry.
 
-**Companion pin** — smolmux's `companion.json`: the integration commit an smolmux
-release is built with and the build string `<zon version>+arthack.<12 hex>` a
+**Companion pin** — smolmux's `companion.json`: the integration commit its
+source installer builds and the build string `<zon version>+arthack.<12 hex>` a
 Companion built from it reports. The consumer binding of this workshop; moved
 only by `scripts/pin-companion.sh`.
 _Avoid_: lock file, dependency version.
@@ -50,7 +50,7 @@ _Avoid_: quarantine branch, stale branch, automatic archive.
 the offers' fate, rebases the stack onto current upstream, gates the
 candidate, publishes `integration` under a lease, moves smolmux's pin, and updates
 the scratchpad.
-_Avoid_: update, release (that is smolmux's act).
+_Avoid_: update, release (Smolmux's source installation is a separate contract).
 
 **Handoff** — One session moving from its daemon to a freshly executed zmx
 binary: its PTY master and listening socket cross a private socket, the child
