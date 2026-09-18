@@ -14,7 +14,10 @@ python3 .githooks/pre-push --check
 for script in scripts/reconcile-branches.sh scripts/pin-companion.sh tests/pin-transaction.sh tests/fixtures/fake-zig.sh; do
     [ -x "$script" ] || fail "$script is not executable"
 done
-[ "$(readlink CLAUDE.md)" = AGENTS.md ] || fail "CLAUDE.md must link to AGENTS.md"
+[ -f AGENTS.md ] || fail "AGENTS.md is missing"
+if [ -e CLAUDE.md ] || [ -L CLAUDE.md ]; then
+    fail "CLAUDE.md must not exist; AGENTS.md is the sole project instruction file"
+fi
 
 # The spec has every section the shared maintain skill reads by name.
 for section in Purpose Upstream 'Branch model' Features Gate Consumer Notify; do
