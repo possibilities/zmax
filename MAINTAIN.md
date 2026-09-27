@@ -297,7 +297,7 @@ failure there alone is rerun, not waved through.
 smolmux's Companion pin. After the leased push of `integration`, run:
 
 ```sh
-~/code/zmax/scripts/pin-companion.sh --apply
+~/workshops/zmax/scripts/pin-companion.sh --apply
 ```
 
 It reads the published `integration` commit from the bound checkout (which
