@@ -32,7 +32,7 @@ the Companion smolmux bundles as `smolmux-zmx`. Read `CONTEXT.md`, `MAINTAIN.md`
   after building that commit and running smolmux's suite against it. It never
   rebases, publishes, or cuts an smolmux release.
 
-The checkout being maintained is `~/source/neurosnap--zmx`, with `fork`
+The checkout being maintained is `fork/` (`~/workshops/zmax/fork`), with `fork`
 pointing to `possibilities/zmx` and `upstream` pointing to `neurosnap/zmx`. Its
 `integration` branch is the only ref smolmux's pin may name. zmx has no agent
 guidance of its own; smolmux's `AGENTS.md` and `CONTEXT.md` carry the Companion's
@@ -40,10 +40,14 @@ contract and language, and `docs/fork-notes.md` keeps what building the fork
 taught about zmx's internals and wire — read it before a rebase touches
 `loop.zig`, `daemonize.zig`, or `ipc.zig`.
 
+The fork is a separate Git repository inside this Workshop. `fork/` and
+`worktrees/` are ignored; the Workshop tracks maintenance files, never fork
+contents. New persistent maintenance worktrees belong under `worktrees/`.
+
 ## Working topology
 
-Work directly on `main` in this repository. Outside this repository, create a
-dedicated worktree, commit the finished change, merge it into the target's
+Work directly on `main` in this repository. Create a dedicated fork worktree
+under `worktrees/`, commit the finished change, merge it into the target's
 `main` or integration branch as appropriate, and remove the worktree after the
 merge. Never do feature work in the bound zmx checkout, never force-update
 `integration` in place, and never push an offer onto a branch a pull request

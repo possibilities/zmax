@@ -21,11 +21,12 @@ never shadows or depends on a zmx a human may have installed.
 
 ## Upstream
 
-- Bound checkout: `~/source/neurosnap--zmx`. `upstream` is `neurosnap/zmx`; `fork` is
+- Bound checkout: `fork/` (`~/workshops/zmax/fork`). `upstream` is `neurosnap/zmx`; `fork` is
   `possibilities/zmx`. zmx has no `AGENTS.md`; smolmux's (`~/code/smolmux/AGENTS.md`
   and `CONTEXT.md`) name the Companion's contract and the language —
   **Companion**, **Home**, **Companion pin**, **Restore** — and are read before
-  touching the fork.
+  touching the fork. The checkout is ignored by the Workshop; new persistent
+  maintenance worktrees live in ignored `worktrees/`.
 - Contribution conventions: low volume, strongly single-maintainer,
   scope-conscious. No `CONTRIBUTING.md`, issue-first rule, pull-request
   template, hosted CI, CLA, or DCO; CI is the maintainer's own pico.sh run on

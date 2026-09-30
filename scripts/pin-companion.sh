@@ -35,7 +35,8 @@ esac
     exit 64
 }
 
-zmx_checkout="${ZMAX_ZMX_CHECKOUT:-$HOME/source/neurosnap--zmx}"
+root=$(cd "$(dirname "$0")/.." && pwd)
+zmx_checkout="${ZMAX_ZMX_CHECKOUT:-$root/fork}"
 smolmux_checkout="${ZMAX_SMOLMUX_CHECKOUT:-$HOME/code/smolmux}"
 fork_remote="${ZMAX_FORK_REMOTE:-fork}"
 integration_branch=integration

@@ -19,7 +19,7 @@ fi
 
 MAINTAIN_WORKSHOP="$(cd "$(dirname "$0")/.." && pwd)"
 export MAINTAIN_WORKSHOP
-export MAINTAIN_CHECKOUT="${ZMAX_ZMX_CHECKOUT:-$HOME/source/neurosnap--zmx}"
+export MAINTAIN_CHECKOUT="${ZMAX_ZMX_CHECKOUT:-$MAINTAIN_WORKSHOP/fork}"
 export MAINTAIN_FORK_REPO=possibilities/zmx
 export MAINTAIN_UPSTREAM_REPO=neurosnap/zmx
 export MAINTAIN_FORK_REMOTE=fork

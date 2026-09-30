@@ -95,12 +95,16 @@ implementation is read and its path exercised.
   [#247](https://github.com/neurosnap/zmx/issues/247)
   (`poc/attach-exit-status` → `53407fe`). Both are open with no comments as
   of 2026-08-29, and upstream `fb1b6b6` contains neither replacement. Local
-  `fix/*` branches of the same commits exist in `~/source/neurosnap--zmx` and
+  `fix/*` branches of the same commits exist in `fork/` and
   are not published. `fix/daemon-dev-tty` is specified, not cut. #127 remains
   open; there has been no maintainer response since our 2026-08-22 comment.
 
 ## Current notes
 
+- 2026-09-29 layout: the bound clone now lives at `fork/` inside this Workshop;
+  script defaults and smolmux's local source lookup use the nested checkout.
+  All fork refs and the Companion pin were preserved. New persistent
+  maintenance worktrees belong in ignored `worktrees/`.
 - The original Swappable PTYs implementation `a26f4bf` remains preserved on
   `feat/swappable-ptys` and in its verified handoff bundle. Delivery `9b8e5bc`
   retains the later client and Restore safeguards. This is feature delivery,
